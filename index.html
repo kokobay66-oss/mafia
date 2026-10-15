@@ -2,25 +2,43 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>مجلس المافيا</title>
 <style>
-:root{--bg:#14121f;--card:#221f33;--tx:#f3f0ff;--mu:#a59fc4;--ac:#e0475b;--ok:#3fb68b;--bd:#37334d}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;min-height:100vh}
-#app{max-width:480px;margin:0 auto;padding:30px 16px 40px}
-h1{text-align:center;font-size:26px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin:12px 0;text-align:center}
-p{color:var(--mu);line-height:1.7;margin:6px 0}
-button,input{font:inherit;width:100%;padding:13px;border-radius:12px;border:1px solid var(--bd);margin:5px 0}
-input{background:var(--bg);color:var(--tx);text-align:center;font-size:20px;letter-spacing:4px}
-button{background:var(--ac);color:#fff;border:0;font-weight:700;cursor:pointer}
-button.alt{background:var(--card);color:var(--tx);border:1px solid var(--bd)}
-button:disabled{opacity:.4}
+:root{--bg:#0f0d1a;--card:#1c1930;--tx:#f3f0ff;--mu:#9d97bd;--ac:#e0475b;--ac2:#ff7a59;--bd:#2f2b4a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:radial-gradient(circle at 50% -10%,#2a1f4a,var(--bg) 60%) fixed;color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;min-height:100vh}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px}
+.logo{font-weight:800;font-size:17px}
+.pc{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bd);border-radius:40px;padding:6px 8px 6px 16px}
+.av{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--bd)}
+.av.big{width:96px;height:96px}
+.pn{font-weight:700;font-size:14px}.pi{font-size:11px;color:var(--mu)}
+main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:16px}
+.h{text-align:center;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:10px 0}
+.c{text-align:center}
+p{color:var(--mu);margin:6px 0;line-height:1.7}
+.l{text-align:right;font-size:13px;margin:10px 0 2px}
+button,input{font:inherit;width:100%;padding:14px;border-radius:14px;border:1px solid var(--bd);margin:6px 0}
+input{background:var(--bg);color:var(--tx);text-align:center}
+.btn{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;border:0;font-weight:800;font-size:18px;cursor:pointer;padding:18px}
+.btn.alt{background:var(--card);border:1px solid var(--ac)}
+.btn.ghost{background:transparent;border:1px dashed var(--bd);color:var(--mu);font-size:15px;padding:14px}
+.btn:disabled{opacity:.4}
+.sep{height:14px}
+.err{color:var(--ac);text-align:center;min-height:22px;font-size:14px}
+.avw{position:relative;display:inline-block;cursor:pointer}
+.cam{position:absolute;bottom:0;left:0;background:var(--ac);border-radius:50%;width:30px;height:30px;line-height:30px;font-size:15px}
+nav{display:flex;gap:14px;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+nav button{flex:1;margin:0;padding:10px 4px;background:var(--card);color:var(--mu);font-size:12px;border-radius:16px}
+nav button span{display:block;font-size:22px}
+nav button.on{color:#fff;border-color:var(--ac)}
 .code{font-size:44px;letter-spacing:8px;font-weight:800;direction:ltr}
-.pl{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--bd);text-align:right}
-.pl img{width:36px;height:36px;border-radius:50%}
-.err{color:var(--ac);text-align:center;min-height:22px}
+.pl{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--bd)}
+.pl .av{width:36px;height:36px}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#000c;padding:10px 18px;border-radius:20px;z-index:9}
 </style>
 </head>
 <body>
@@ -28,7 +46,7 @@ button:disabled{opacity:.4}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,getDoc,setDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyC0raHI8DivZ0e5QNIM9EgYf4JeO3m3pc8",
@@ -39,89 +57,150 @@ const app=initializeApp({
   appId:"1:471485943029:web:fc182eab8df6ee3d7209bc"
 });
 const auth=getAuth(app),db=getFirestore(app);
-const A=document.getElementById('app');
-const MIN=2,MAX=12; // للتجربة MIN=2، لاحقًا نخليها 5
-let me=null,code=null,room=null,players=[],unsubs=[];
+const $=i=>document.getElementById(i),A=$('app');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const err=m=>{const e=document.getElementById('e');if(e)e.textContent=m};
+const MIN=2,MAX=12; // للتجربة MIN=2، لاحقًا 5
+let me,prof,code,room,players=[],unsubs=[],tab='play',draft={};
 const stop=()=>{unsubs.forEach(f=>f());unsubs=[]};
+const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
+const age=b=>{const d=new Date(b),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate()))a--;return a};
+const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const s=Math.min(i.width,i.height);c.getContext('2d').drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,128,128);r(c.toDataURL('image/jpeg',.8))};i.src=URL.createObjectURL(f)});
+const topbar=()=>'<div class="top"><div class="pc"><img class="av" src="'+esc(prof.photo)+'"><div><div class="pn">'+esc(prof.name)+'</div><div class="pi">ID: '+prof.pid+'</div></div></div><div class="logo">🎭 مجلس المافيا</div></div>';
 
-function loginScreen(msg){
+function login(msg){
   stop();
-  A.innerHTML='<h1>🎭 مجلس المافيا</h1><div class="card"><p>سجّل دخولك عشان تلعب</p></div><button id="g">الدخول عن طريق قوقل</button><div class="err" id="e">'+esc(msg)+'</div>';
-  document.getElementById('g').onclick=async()=>{
-    try{await signInWithPopup(auth,new GoogleAuthProvider())}
-    catch(e){err('ما انفتح الدخول: '+e.code)}
-  };
+  A.innerHTML='<main><h1 class="h">🎭 مجلس المافيا</h1><div class="card c"><p>سجّل دخولك عشان تلعب</p></div><button class="btn" id="g">الدخول عن طريق قوقل</button><div class="err" id="e">'+esc(msg)+'</div></main>';
+  $('g').onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){login('ما انفتح الدخول: '+e.code)}};
 }
 
-function menu(msg){
-  stop();code=null;room=null;
-  A.innerHTML='<h1>🎭 مجلس المافيا</h1><div class="card"><p>أهلاً <b style="color:var(--tx)">'+esc(me.displayName)+'</b></p></div>'+
-  '<button id="c">إنشاء غرفة</button>'+
-  '<div class="card"><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة"><button class="alt" id="j">انضم</button></div>'+
-  '<div class="err" id="e">'+esc(msg||'')+'</div><button class="alt" id="o">تسجيل خروج</button>';
-  document.getElementById('c').onclick=createRoom;
-  document.getElementById('j').onclick=()=>joinRoom(document.getElementById('cd').value.trim());
-  document.getElementById('o').onclick=()=>signOut(auth);
+function formHTML(edit){
+  return '<div class="card c"><label class="avw"><img id="pv" class="av big" src="'+esc(draft.photo)+'"><span class="cam">📷</span><input type="file" id="pf" accept="image/*" hidden></label>'+
+  '<input id="nm" maxlength="14" placeholder="اسمك في اللعبة" value="'+esc(draft.name)+'">'+
+  '<p class="l">تاريخ الميلاد</p><input id="bd" type="date" value="'+esc(draft.birth)+'">'+
+  '<div class="err" id="e"></div><button class="btn" id="sv">'+(edit?'حفظ التعديلات':'إنشاء الحساب')+'</button></div>';
 }
-
-async function addMe(c){
-  await setDoc(doc(db,'rooms',c,'players',me.uid),{name:me.displayName||'لاعب',photo:me.photoURL||'',joinedAt:serverTimestamp()});
+function bindForm(edit){
+  $('pf').onchange=async e=>{const f=e.target.files[0];if(f){draft.photo=await readImg(f);$('pv').src=draft.photo}};
+  $('nm').oninput=e=>draft.name=e.target.value;
+  $('bd').onchange=e=>draft.birth=e.target.value;
+  $('sv').onclick=()=>saveProfile(edit);
 }
-async function createRoom(){
+async function saveProfile(edit){
+  const n=draft.name.trim(),e=m=>$('e').textContent=m;
+  if(n.length<2){e('الاسم قصير');return}
+  if(!draft.birth){e('اختر تاريخ ميلادك');return}
+  const a=age(draft.birth);
+  if(!(a>=13&&a<=100)){e(a<13?'اللعبة للعمر 13 سنة وفوق':'تاريخ غير صحيح');return}
   try{
-    let c;
-    do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
-    await setDoc(doc(db,'rooms',c),{host:me.uid,status:'lobby',createdAt:serverTimestamp()});
-    await addMe(c);enter(c);
-  }catch(e){err('مشكلة: '+e.code)}
+    if(edit){
+      prof={...prof,name:n,photo:draft.photo,birth:draft.birth};
+      await updateDoc(doc(db,'users',me.uid),{name:n,photo:draft.photo,birth:draft.birth});
+      toast('انحفظ ✅');shell();
+    }else{
+      let pid;do{pid=String(Math.floor(100000+Math.random()*900000))}while((await getDoc(doc(db,'ids',pid))).exists());
+      await setDoc(doc(db,'ids',pid),{uid:me.uid});
+      prof={name:n,photo:draft.photo,birth:draft.birth,pid};
+      await setDoc(doc(db,'users',me.uid),{...prof,createdAt:serverTimestamp()});
+      shell();
+    }
+  }catch(x){e('مشكلة: '+x.code)}
+}
+function setup(){
+  A.innerHTML='<div class="top"><div class="logo">🎭 مجلس المافيا</div></div><main><h2 class="h">أنشئ حسابك</h2>'+formHTML(false)+'</main>';
+  bindForm(false);
+}
+
+function shell(msg){
+  stop();code=null;room=null;
+  let b='';
+  if(tab==='play')b='<button class="btn" id="rnd">🎲 عشوائي</button><button class="btn alt" id="cus">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
+  else if(tab==='msg')b='<div class="card c"><div style="font-size:48px">💬</div><p>الرسائل والأصدقاء قريبًا</p></div>';
+  else b='<h2 class="h">أنا</h2>'+formHTML(true)+'<button class="btn alt" id="lo" style="font-size:15px;padding:12px">تسجيل خروج</button>';
+  const tabs=[['play','🎮','اللعب'],['msg','💬','الرسائل'],['me','👤','أنا']];
+  A.innerHTML=topbar()+'<main>'+b+'<div class="err" id="e">'+esc(msg||'')+'</div></main><nav>'+
+    tabs.map(t=>'<button data-t="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
+  document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;if(tab==='me')draft={...prof};shell()});
+  if(tab==='play'){$('rnd').onclick=quick;$('cus').onclick=()=>custom();$('off').onclick=()=>toast('الأوف لاين قريبًا')}
+  if(tab==='me'){bindForm(true);$('lo').onclick=()=>signOut(auth)}
+}
+
+function custom(msg){
+  A.innerHTML=topbar()+'<main><div class="card c"><button class="btn" id="c">إنشاء غرفة جديدة</button></div>'+
+  '<div class="card c"><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة"><button class="btn alt" id="j" style="font-size:16px;padding:14px">انضم</button></div>'+
+  '<div class="err" id="e">'+esc(msg||'')+'</div><button class="btn ghost" id="bk">رجوع</button></main>';
+  $('c').onclick=async()=>{try{await newRoom(false)}catch(x){custom('مشكلة: '+x.code)}};
+  $('j').onclick=()=>joinRoom($('cd').value.trim());
+  $('bk').onclick=()=>shell();
+}
+
+const addMe=c=>setDoc(doc(db,'rooms',c,'players',me.uid),{name:prof.name,photo:prof.photo,joinedAt:serverTimestamp()});
+async function newRoom(pub){
+  let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
+  await setDoc(doc(db,'rooms',c),{host:me.uid,status:'lobby',public:pub,createdAt:serverTimestamp()});
+  await addMe(c);enter(c);
 }
 async function joinRoom(c){
-  if(c.length!==4){err('الكود 4 أرقام');return}
+  if(c.length!==4){custom('الكود 4 أرقام');return}
   try{
     const s=await getDoc(doc(db,'rooms',c));
-    if(!s.exists()){err('ما لقيت الغرفة');return}
-    if(s.data().status!=='lobby'){err('اللعبة بدأت');return}
-    const cnt=(await getDocs(collection(db,'rooms',c,'players'))).size;
-    if(cnt>=MAX){err('الغرفة ممتلئة');return}
+    if(!s.exists()){custom('ما لقيت الغرفة');return}
+    if(s.data().status!=='lobby'){custom('اللعبة بدأت');return}
+    if((await getDocs(collection(db,'rooms',c,'players'))).size>=MAX){custom('الغرفة ممتلئة');return}
     await addMe(c);enter(c);
-  }catch(e){err('مشكلة: '+e.code)}
+  }catch(x){custom('مشكلة: '+x.code)}
+}
+async function quick(){
+  $('e').textContent='ندوّر لك على غرفة...';
+  try{
+    const q=await getDocs(query(collection(db,'rooms'),where('public','==',true),where('status','==','lobby'),limit(10)));
+    for(const d of q.docs){
+      const t=d.data().createdAt;
+      if(t&&Date.now()-t.toMillis()>20*60000)continue;
+      const n=(await getDocs(collection(db,'rooms',d.id,'players'))).size;
+      if(n>0&&n<MAX){await addMe(d.id);enter(d.id);return}
+    }
+    await newRoom(true);
+  }catch(x){shell('مشكلة: '+x.code)}
 }
 
 function enter(c){
   stop();code=c;
   unsubs.push(onSnapshot(doc(db,'rooms',c),s=>{
-    if(!s.exists()){menu('المضيف سكّر الغرفة');return}
+    if(!s.exists()){shell('المضيف سكّر الغرفة');return}
     room=s.data();render();
   }));
   unsubs.push(onSnapshot(query(collection(db,'rooms',c,'players'),orderBy('joinedAt')),s=>{
     players=s.docs.map(d=>({id:d.id,...d.data()}));render();
   }));
 }
-
 function render(){
   if(!room||!code)return;
   const host=room.host===me.uid;
-  if(room.status==='playing'){
-    A.innerHTML='<h1>🎬</h1><div class="card"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div>';return;
-  }
-  A.innerHTML='<h1>الغرفة</h1><div class="card"><p>كود الغرفة</p><div class="code">'+code+'</div><p>أعطه لأصحابك</p></div>'+
-  '<div class="card"><p>اللاعبين ('+players.length+')</p>'+
-  players.map(p=>'<div class="pl">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="">':'')+'<span>'+esc(p.name)+(p.id===room.host?' 👑':'')+'</span></div>').join('')+'</div>'+
-  (host?'<button id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+' على الأقل)':'')+'</button>':'<p style="text-align:center">ننتظر المضيف يبدأ...</p>')+
-  '<button class="alt" id="l">خروج من الغرفة</button>';
-  if(host)document.getElementById('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
-  document.getElementById('l').onclick=leave;
+  if(room.status==='playing'){A.innerHTML='<main><h1 class="h">🎬</h1><div class="card c"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div></main>';return}
+  A.innerHTML=topbar()+'<main><div class="card c"><p>'+(room.public?'غرفة عشوائية':'كود الغرفة')+'</p><div class="code">'+code+'</div></div>'+
+  '<div class="card"><p style="text-align:center">اللاعبين ('+players.length+')</p>'+
+  players.map(p=>'<div class="pl"><img class="av" src="'+esc(p.photo)+'"><span>'+esc(p.name)+(p.id===room.host?' 👑':'')+'</span></div>').join('')+'</div>'+
+  (host?'<button class="btn" id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+')':'')+'</button>':'<p style="text-align:center">ننتظر المضيف يبدأ...</p>')+
+  '<button class="btn ghost" id="l">خروج من الغرفة</button></main>';
+  if(host)$('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
+  $('l').onclick=leave;
 }
 async function leave(){
   const c=code,host=room&&room.host===me.uid;
   stop();
   try{await deleteDoc(doc(db,'rooms',c,'players',me.uid));if(host)await deleteDoc(doc(db,'rooms',c))}catch(e){}
-  menu('');
+  shell();
 }
 
-onAuthStateChanged(auth,u=>{me=u;u?menu(''):loginScreen('')});
+onAuthStateChanged(auth,async u=>{
+  me=u;
+  if(!u){login('');return}
+  try{
+    const s=await getDoc(doc(db,'users',u.uid));
+    if(s.exists()){prof=s.data();shell()}
+    else{draft={name:u.displayName||'',photo:u.photoURL||'',birth:''};setup()}
+  }catch(x){login('مشكلة: '+x.code)}
+});
 </script>
 </body>
 </html>
