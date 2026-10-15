@@ -5,17 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>مجلس المافيا</title>
 <style>
-:root{--bg:#14121f;--card:#221f33;--tx:#f3f0ff;--mu:#a59fc4;--ac:#e0475b;--bd:#37334d}
+:root{--bg:#14121f;--card:#221f33;--tx:#f3f0ff;--mu:#a59fc4;--ac:#e0475b;--ok:#3fb68b;--bd:#37334d}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;min-height:100vh}
-#app{max-width:480px;margin:0 auto;padding:40px 16px}
-h1{text-align:center;font-size:28px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:20px;margin:14px 0;text-align:center}
-p{color:var(--mu);line-height:1.7}
-button{font:inherit;width:100%;padding:14px;border-radius:12px;border:0;background:var(--ac);color:#fff;font-weight:700;cursor:pointer;margin:6px 0}
+#app{max-width:480px;margin:0 auto;padding:30px 16px 40px}
+h1{text-align:center;font-size:26px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin:12px 0;text-align:center}
+p{color:var(--mu);line-height:1.7;margin:6px 0}
+button,input{font:inherit;width:100%;padding:13px;border-radius:12px;border:1px solid var(--bd);margin:5px 0}
+input{background:var(--bg);color:var(--tx);text-align:center;font-size:20px;letter-spacing:4px}
+button{background:var(--ac);color:#fff;border:0;font-weight:700;cursor:pointer}
 button.alt{background:var(--card);color:var(--tx);border:1px solid var(--bd)}
-img{width:72px;height:72px;border-radius:50%}
-.big{font-size:56px}
+button:disabled{opacity:.4}
+.code{font-size:44px;letter-spacing:8px;font-weight:800;direction:ltr}
+.pl{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--bd);text-align:right}
+.pl img{width:36px;height:36px;border-radius:50%}
+.err{color:var(--ac);text-align:center;min-height:22px}
 </style>
 </head>
 <body>
@@ -23,6 +28,7 @@ img{width:72px;height:72px;border-radius:50%}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyC0raHI8DivZ0e5QNIM9EgYf4JeO3m3pc8",
@@ -32,25 +38,90 @@ const app=initializeApp({
   messagingSenderId:"471485943029",
   appId:"1:471485943029:web:fc182eab8df6ee3d7209bc"
 });
-const auth=getAuth(app);
+const auth=getAuth(app),db=getFirestore(app);
 const A=document.getElementById('app');
+const MIN=2,MAX=12; // للتجربة MIN=2، لاحقًا نخليها 5
+let me=null,code=null,room=null,players=[],unsubs=[];
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const err=m=>{const e=document.getElementById('e');if(e)e.textContent=m};
+const stop=()=>{unsubs.forEach(f=>f());unsubs=[]};
 
 function loginScreen(msg){
-  A.innerHTML='<h1>🎭 مجلس المافيا</h1><div class="card"><div class="big">🔐</div><p>سجّل دخولك عشان تلعب</p></div>'+
-  '<button id="g">الدخول عن طريق قوقل</button><p id="e" style="color:var(--ac);text-align:center">'+esc(msg)+'</p>';
+  stop();
+  A.innerHTML='<h1>🎭 مجلس المافيا</h1><div class="card"><p>سجّل دخولك عشان تلعب</p></div><button id="g">الدخول عن طريق قوقل</button><div class="err" id="e">'+esc(msg)+'</div>';
   document.getElementById('g').onclick=async()=>{
     try{await signInWithPopup(auth,new GoogleAuthProvider())}
-    catch(e){loginScreen('ما انفتح الدخول: '+e.code)}
+    catch(e){err('ما انفتح الدخول: '+e.code)}
   };
 }
-function home(u){
-  A.innerHTML='<h1>🎭 مجلس المافيا</h1><div class="card">'+(u.photoURL?'<img src="'+esc(u.photoURL)+'" alt="">':'')+
-  '<h2>أهلاً '+esc(u.displayName)+'</h2><p>تم تسجيل دخولك بنجاح ✅</p></div>'+
-  '<button class="alt" id="o">تسجيل خروج</button><p style="text-align:center">الخطوة الجاية: الغرف واللوبي</p>';
+
+function menu(msg){
+  stop();code=null;room=null;
+  A.innerHTML='<h1>🎭 مجلس المافيا</h1><div class="card"><p>أهلاً <b style="color:var(--tx)">'+esc(me.displayName)+'</b></p></div>'+
+  '<button id="c">إنشاء غرفة</button>'+
+  '<div class="card"><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة"><button class="alt" id="j">انضم</button></div>'+
+  '<div class="err" id="e">'+esc(msg||'')+'</div><button class="alt" id="o">تسجيل خروج</button>';
+  document.getElementById('c').onclick=createRoom;
+  document.getElementById('j').onclick=()=>joinRoom(document.getElementById('cd').value.trim());
   document.getElementById('o').onclick=()=>signOut(auth);
 }
-onAuthStateChanged(auth,u=>u?home(u):loginScreen(''));
+
+async function addMe(c){
+  await setDoc(doc(db,'rooms',c,'players',me.uid),{name:me.displayName||'لاعب',photo:me.photoURL||'',joinedAt:serverTimestamp()});
+}
+async function createRoom(){
+  try{
+    let c;
+    do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
+    await setDoc(doc(db,'rooms',c),{host:me.uid,status:'lobby',createdAt:serverTimestamp()});
+    await addMe(c);enter(c);
+  }catch(e){err('مشكلة: '+e.code)}
+}
+async function joinRoom(c){
+  if(c.length!==4){err('الكود 4 أرقام');return}
+  try{
+    const s=await getDoc(doc(db,'rooms',c));
+    if(!s.exists()){err('ما لقيت الغرفة');return}
+    if(s.data().status!=='lobby'){err('اللعبة بدأت');return}
+    const cnt=(await getDocs(collection(db,'rooms',c,'players'))).size;
+    if(cnt>=MAX){err('الغرفة ممتلئة');return}
+    await addMe(c);enter(c);
+  }catch(e){err('مشكلة: '+e.code)}
+}
+
+function enter(c){
+  stop();code=c;
+  unsubs.push(onSnapshot(doc(db,'rooms',c),s=>{
+    if(!s.exists()){menu('المضيف سكّر الغرفة');return}
+    room=s.data();render();
+  }));
+  unsubs.push(onSnapshot(query(collection(db,'rooms',c,'players'),orderBy('joinedAt')),s=>{
+    players=s.docs.map(d=>({id:d.id,...d.data()}));render();
+  }));
+}
+
+function render(){
+  if(!room||!code)return;
+  const host=room.host===me.uid;
+  if(room.status==='playing'){
+    A.innerHTML='<h1>🎬</h1><div class="card"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div>';return;
+  }
+  A.innerHTML='<h1>الغرفة</h1><div class="card"><p>كود الغرفة</p><div class="code">'+code+'</div><p>أعطه لأصحابك</p></div>'+
+  '<div class="card"><p>اللاعبين ('+players.length+')</p>'+
+  players.map(p=>'<div class="pl">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="">':'')+'<span>'+esc(p.name)+(p.id===room.host?' 👑':'')+'</span></div>').join('')+'</div>'+
+  (host?'<button id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+' على الأقل)':'')+'</button>':'<p style="text-align:center">ننتظر المضيف يبدأ...</p>')+
+  '<button class="alt" id="l">خروج من الغرفة</button>';
+  if(host)document.getElementById('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
+  document.getElementById('l').onclick=leave;
+}
+async function leave(){
+  const c=code,host=room&&room.host===me.uid;
+  stop();
+  try{await deleteDoc(doc(db,'rooms',c,'players',me.uid));if(host)await deleteDoc(doc(db,'rooms',c))}catch(e){}
+  menu('');
+}
+
+onAuthStateChanged(auth,u=>{me=u;u?menu(''):loginScreen('')});
 </script>
 </body>
 </html>
