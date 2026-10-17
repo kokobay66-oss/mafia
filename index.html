@@ -7,7 +7,9 @@
 <style>
 :root{--bg:#0f0d1a;--card:#1c1930;--tx:#f3f0ff;--mu:#9d97bd;--ac:#e0475b;--ac2:#ff7a59;--bd:#2f2b4a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:radial-gradient(circle at 50% -10%,#2a1f4a,var(--bg) 60%) fixed;color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;min-height:100vh}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;min-height:100vh}
+#bg{position:fixed;inset:0;z-index:-1;background:#120a06 url(bg.jpg) center/cover no-repeat}
+#bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,6,4,.55),rgba(10,6,4,.3) 50%,rgba(10,6,4,.7))}
 #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
 .top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px}
 .logo{font-weight:800;font-size:17px}
@@ -16,15 +18,15 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#2a1f4a,var(--bg) 60
 .av.big{width:96px;height:96px}
 .pn{font-weight:700;font-size:14px}.pi{font-size:11px;color:var(--mu)}
 main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:16px}
-.h{text-align:center;margin:0 0 10px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:10px 0}
+.h{text-align:center;margin:0 0 10px;text-shadow:0 0 22px rgba(224,71,91,.6)}
+.card{background:rgba(28,25,48,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:10px 0}
 .c{text-align:center}
 p{color:var(--mu);margin:6px 0;line-height:1.7}
 .l{text-align:right;font-size:13px;margin:10px 0 2px}
 button,input{font:inherit;width:100%;padding:14px;border-radius:14px;border:1px solid var(--bd);margin:6px 0}
 input{background:var(--bg);color:var(--tx);text-align:center}
 .btn{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;border:0;font-weight:800;font-size:18px;cursor:pointer;padding:18px}
-.btn.alt{background:var(--card);border:1px solid var(--ac)}
+.btn.alt{background:var(--card);border:1px solid var(--ac);color:var(--tx)}
 .btn.ghost{background:transparent;border:1px dashed var(--bd);color:var(--mu);font-size:15px;padding:14px}
 .btn:disabled{opacity:.4}
 .gbtn{display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#3c4043;border:1px solid #dadce0;font-weight:700;font-size:16px;padding:14px;cursor:pointer}
@@ -40,16 +42,25 @@ input{background:var(--bg);color:var(--tx);text-align:center}
 .wh div{height:40px;line-height:40px;scroll-snap-align:center;color:var(--mu);font-size:15px}
 .wh div.on{color:var(--tx);font-weight:800;font-size:18px}
 nav{display:flex;gap:14px;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
-nav button{flex:1;margin:0;padding:10px 4px;background:var(--card);color:var(--mu);font-size:12px;border-radius:16px}
+nav button{flex:1;margin:0;padding:10px 4px;background:rgba(28,25,48,.85);color:var(--mu);font-size:12px;border-radius:16px}
 nav button span{display:block;font-size:22px}
 nav button.on{color:#fff;border-color:var(--ac)}
-.code{font-size:44px;letter-spacing:8px;font-weight:800;direction:ltr}
-.pl{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--bd)}
-.pl .av{width:36px;height:36px}
+.code{font-size:38px;letter-spacing:6px;font-weight:800;direction:ltr}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#000c;padding:10px 18px;border-radius:20px;z-index:9}
+.seats{display:flex;align-items:stretch;justify-content:space-between;gap:8px;min-height:430px}
+.col{display:flex;flex-direction:column;justify-content:space-around;align-items:center;width:58px}
+.seatw{display:flex;flex-direction:column;align-items:center}
+.seat{position:relative;width:44px;height:44px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.45);background:rgba(255,255,255,.07);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;line-height:1;cursor:pointer}
+.seat img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.seat.me{border:2px solid var(--ac)}
+.seat.full{border-style:solid;cursor:default}
+.crown{position:absolute;top:-11px;font-size:14px}
+.sn{font-size:10px;max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;margin-top:3px;min-height:14px}
+.mid{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
 </style>
 </head>
 <body>
+<div id="bg"></div>
 <div id="app"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -67,7 +78,7 @@ const app=initializeApp({
 const auth=getAuth(app),db=getFirestore(app);
 const $=i=>document.getElementById(i),A=$('app');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const MIN=2,MAX=12;
+const MIN=2,MAX=10; // 5 يمين + 5 يسار. للتجربة MIN=2
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const GSVG='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 let me,prof,code,room,players=[],unsubs=[],tab='play',draft={};
@@ -124,8 +135,7 @@ async function saveProfile(edit){
   if(n.length<2){e('الاسم قصير');return}
   const [y,m,d]=draft.birth.split('-').map(Number);
   if(new Date(y,m-1,d).getMonth()!==m-1){e('تاريخ ميلاد غير صحيح');return}
-  const a=age(draft.birth);
-  if(a<13){e('اللعبة للعمر 13 سنة وفوق');return}
+  if(age(draft.birth)<13){e('اللعبة للعمر 13 سنة وفوق');return}
   try{
     if(edit){
       prof={...prof,name:n,photo:draft.photo,birth:draft.birth};
@@ -168,11 +178,18 @@ function custom(msg){
   $('bk').onclick=()=>shell();
 }
 
-const addMe=c=>setDoc(doc(db,'rooms',c,'players',me.uid),{name:prof.name,photo:prof.photo,joinedAt:serverTimestamp()});
+/* الغرف والمقاعد */
+const addMe=(c,seat)=>setDoc(doc(db,'rooms',c,'players',me.uid),{name:prof.name,photo:prof.photo,seat,joinedAt:serverTimestamp()});
+async function seatInfo(c){
+  const s=await getDocs(collection(db,'rooms',c,'players'));
+  const t=new Set(s.docs.map(d=>d.data().seat));
+  let seat=-1;for(let i=0;i<MAX;i++)if(!t.has(i)){seat=i;break}
+  return {seat,n:s.size};
+}
 async function newRoom(pub){
   let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
   await setDoc(doc(db,'rooms',c),{host:me.uid,status:'lobby',public:pub,createdAt:serverTimestamp()});
-  await addMe(c);enter(c);
+  await addMe(c,0);enter(c);
 }
 async function joinRoom(c){
   if(c.length!==4){custom('الكود 4 أرقام');return}
@@ -180,8 +197,9 @@ async function joinRoom(c){
     const s=await getDoc(doc(db,'rooms',c));
     if(!s.exists()){custom('ما لقيت الغرفة');return}
     if(s.data().status!=='lobby'){custom('اللعبة بدأت');return}
-    if((await getDocs(collection(db,'rooms',c,'players'))).size>=MAX){custom('الغرفة ممتلئة');return}
-    await addMe(c);enter(c);
+    const si=await seatInfo(c);
+    if(si.seat<0){custom('الغرفة ممتلئة');return}
+    await addMe(c,si.seat);enter(c);
   }catch(x){custom('مشكلة: '+x.code)}
 }
 async function quick(){
@@ -191,8 +209,8 @@ async function quick(){
     for(const d of q.docs){
       const t=d.data().createdAt;
       if(t&&Date.now()-t.toMillis()>20*60000)continue;
-      const n=(await getDocs(collection(db,'rooms',d.id,'players'))).size;
-      if(n>0&&n<MAX){await addMe(d.id);enter(d.id);return}
+      const si=await seatInfo(d.id);
+      if(si.n>0&&si.seat>=0){await addMe(d.id,si.seat);enter(d.id);return}
     }
     await newRoom(true);
   }catch(x){shell('مشكلة: '+x.code)}
@@ -208,15 +226,26 @@ function enter(c){
     players=s.docs.map(d=>({id:d.id,...d.data()}));render();
   }));
 }
+function seatHTML(i){
+  const p=players.find(x=>x.seat===i);
+  if(!p)return '<div class="seatw"><div class="seat" data-seat="'+i+'">+</div><div class="sn"></div></div>';
+  return '<div class="seatw"><div class="seat full'+(p.id===me.uid?' me':'')+'">'+(p.id===room.host?'<span class="crown">👑</span>':'')+'<img src="'+esc(p.photo)+'" alt=""></div><div class="sn">'+esc(p.name)+'</div></div>';
+}
+const col=a=>'<div class="col">'+a.map(seatHTML).join('')+'</div>';
+async function moveSeat(i){
+  if(players.some(p=>p.seat===i))return;
+  try{await updateDoc(doc(db,'rooms',code,'players',me.uid),{seat:i})}catch(e){toast('مشكلة: '+e.code)}
+}
 function render(){
   if(!room||!code)return;
   const host=room.host===me.uid;
   if(room.status==='playing'){A.innerHTML='<main><h1 class="h">🎬</h1><div class="card c"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div></main>';return}
-  A.innerHTML=topbar()+'<main><div class="card c"><p>'+(room.public?'غرفة عشوائية':'كود الغرفة')+'</p><div class="code">'+code+'</div></div>'+
-  '<div class="card"><p style="text-align:center">اللاعبين ('+players.length+')</p>'+
-  players.map(p=>'<div class="pl"><img class="av" src="'+esc(p.photo)+'"><span>'+esc(p.name)+(p.id===room.host?' 👑':'')+'</span></div>').join('')+'</div>'+
-  (host?'<button class="btn" id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+')':'')+'</button>':'<p style="text-align:center">ننتظر المضيف يبدأ...</p>')+
-  '<button class="btn ghost" id="l">خروج من الغرفة</button></main>';
+  A.innerHTML=topbar()+'<main style="justify-content:flex-start"><div class="seats">'+col([0,1,2,3,4])+
+  '<div class="mid"><div class="card c"><p>'+(room.public?'غرفة عشوائية':'كود الغرفة')+'</p><div class="code">'+code+'</div><p>اللاعبين '+players.length+'/'+MAX+'</p></div>'+
+  '<p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
+  (host?'<button class="btn" id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+')':'')+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
+  '<button class="btn ghost" id="l">خروج من الغرفة</button></div>'+col([5,6,7,8,9])+'</div></main>';
+  document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
   if(host)$('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
   $('l').onclick=leave;
 }
@@ -237,48 +266,5 @@ onAuthStateChanged(auth,async u=>{
   }catch(x){login('مشكلة: '+x.code)}
 });
 </script>
-<style>
-#bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:linear-gradient(180deg,#0b0818 0%,#1a1236 55%,#3a1530 100%)}
-#bg .stars{position:absolute;inset:0;opacity:.8;animation:tw 4s ease-in-out infinite alternate;background-size:220px 220px;background-image:radial-gradient(1.5px 1.5px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 90px 70px,#fff,transparent),radial-gradient(1.5px 1.5px at 150px 20px,#ffe9c4,transparent),radial-gradient(1px 1px at 60px 150px,#fff,transparent),radial-gradient(1px 1px at 190px 120px,#fff,transparent),radial-gradient(1.5px 1.5px at 120px 190px,#fff,transparent)}
-#bg .moon{position:absolute;top:8%;left:14%;width:92px;height:92px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff7e0,#f3d9a0 60%,#d8b574);box-shadow:0 0 60px 20px rgba(255,230,170,.25)}
-#bg svg{position:absolute;bottom:0;left:0;width:100%;height:58%}
-#bg .w{fill:#ffd27a;animation:fl 5s ease-in-out infinite}
-#bg .w:nth-child(3n){animation-delay:1.3s}
-#bg .w:nth-child(4n){animation-delay:2.6s;fill:#ffb35c}
-#bg .w:nth-child(5n){animation-delay:.7s}
-#bg .fog{position:absolute;bottom:0;left:-50%;width:200%;height:32%;background:linear-gradient(0deg,rgba(150,120,190,.28),transparent);animation:fg 40s linear infinite alternate}
-@keyframes tw{from{opacity:.45}to{opacity:.9}}
-@keyframes fl{0%,100%{opacity:1}45%{opacity:.25}60%{opacity:.9}}
-@keyframes fg{from{transform:translateX(0)}to{transform:translateX(25%)}}
-.card{background:rgba(28,25,48,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-nav button{background:rgba(28,25,48,.85)}
-.h{text-shadow:0 0 22px rgba(224,71,91,.6)}
-</style>
-<div id="bg">
-<div class="stars"></div>
-<div class="moon"></div>
-<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice">
-<g fill="#07050f">
-<rect x="0" y="120" width="50" height="80"/><rect x="45" y="90" width="40" height="110"/><rect x="80" y="130" width="55" height="70"/>
-<rect x="130" y="70" width="45" height="130"/><rect x="170" y="110" width="50" height="90"/><rect x="215" y="60" width="40" height="140"/>
-<rect x="250" y="100" width="60" height="100"/><rect x="305" y="80" width="45" height="120"/><rect x="345" y="125" width="55" height="75"/>
-<rect x="233" y="40" width="3" height="22"/><rect x="150" y="56" width="3" height="16"/>
-</g>
-<rect class="w" x="10" y="135" width="4" height="6"/><rect class="w" x="25" y="150" width="4" height="6"/>
-<rect class="w" x="55" y="105" width="4" height="6"/><rect class="w" x="68" y="125" width="4" height="6"/>
-<rect class="w" x="90" y="145" width="4" height="6"/><rect class="w" x="110" y="160" width="4" height="6"/>
-<rect class="w" x="140" y="90" width="4" height="6"/><rect class="w" x="155" y="120" width="4" height="6"/>
-<rect class="w" x="145" y="150" width="4" height="6"/><rect class="w" x="180" y="125" width="4" height="6"/>
-<rect class="w" x="200" y="150" width="4" height="6"/><rect class="w" x="225" y="80" width="4" height="6"/>
-<rect class="w" x="235" y="110" width="4" height="6"/><rect class="w" x="228" y="140" width="4" height="6"/>
-<rect class="w" x="260" y="115" width="4" height="6"/><rect class="w" x="285" y="140" width="4" height="6"/>
-<rect class="w" x="315" y="95" width="4" height="6"/><rect class="w" x="335" y="120" width="4" height="6"/>
-<rect class="w" x="355" y="140" width="4" height="6"/><rect class="w" x="375" y="150" width="4" height="6"/>
-</svg>
-<div class="fog"></div>
-</div><style>
-#bg{background:#120a06 url(bg.jpg) center/cover no-repeat}
-#bg .stars,#bg .moon,#bg svg,#bg .fog{display:none}
-#bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,6,4,.55),rgba(10,6,4,.3) 50%,rgba(10,6,4,.7))}
-</style></body>
+</body>
 </html>
