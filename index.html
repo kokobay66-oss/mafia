@@ -287,4 +287,73 @@ async function joinRoom(c){
     if(!s.exists()){custom('ما لقيت الغرفة');return}
     if(s.data().status!=='lobby'){custom('اللعبة بدأت');return}
     const si=await seatInfo(c);
-    if(si.seat<0){custom('
+        if(si.seat<0){custom('الغرفة ممتلئة');return}
+    await addMe(c,si.seat);enter(c);
+  }catch(x){custom('مشكلة: '+x.code)}
+}
+async function quick(){
+  $('e2').textContent='ندوّر لك على غرفة...';
+  try{
+    const q=await getDocs(query(collection(db,'rooms'),where('public','==',true),where('status','==','lobby'),limit(10)));
+    for(const d of q.docs){
+      const t=d.data().createdAt;
+      if(t&&Date.now()-t.toMillis()>20*60000)continue;
+      const si=await seatInfo(d.id);
+      if(si.n>0&&si.seat>=0){await addMe(d.id,si.seat);enter(d.id);return}
+    }
+    await newRoom(true);
+  }catch(x){shell('مشكلة: '+x.code)}
+}
+
+function enter(c){
+  stop();code=c;
+  unsubs.push(onSnapshot(doc(db,'rooms',c),s=>{
+    if(!s.exists()){shell('المضيف سكّر الغرفة');return}
+    room=s.data();render();
+  }));
+  unsubs.push(onSnapshot(query(collection(db,'rooms',c,'players'),orderBy('joinedAt')),s=>{
+    players=s.docs.map(d=>({id:d.id,...d.data()}));render();
+  }));
+}
+function seatHTML(i){
+  const p=players.find(x=>x.seat===i);
+  if(!p)return '<div class="seatw"><div class="seat" data-seat="'+i+'">+</div><div class="sn"></div></div>';
+  return '<div class="seatw"><div class="seat full'+(p.id===me.uid?' me':'')+'">'+(p.id===room.host?'<span class="crown">👑</span>':'')+'<img src="'+esc(p.photo)+'" alt=""></div><div class="sn">'+esc(p.name)+'</div></div>';
+}
+const col=a=>'<div class="col">'+a.map(seatHTML).join('')+'</div>';
+async function moveSeat(i){
+  if(players.some(p=>p.seat===i))return;
+  try{await updateDoc(doc(db,'rooms',code,'players',me.uid),{seat:i})}catch(e){toast('مشكلة: '+e.code)}
+}
+function render(){
+  if(!room||!code)return;
+  const host=room.host===me.uid;
+  if(room.status==='playing'){A.innerHTML='<main><h1 class="h">🎬</h1><div class="card c"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div></main>';return}
+  A.innerHTML=topbar()+'<main style="justify-content:flex-start"><div class="seats">'+col([0,1,2,3,4])+
+  '<div class="mid"><div class="card c"><p>'+(room.public?'غرفة عشوائية':'كود الغرفة')+'</p><div class="code">'+code+'</div><p>اللاعبين '+players.length+'/'+MAX+'</p></div>'+
+  '<p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
+  (host?'<button class="btn" id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+')':'')+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
+  '<button class="btn ghost" id="l">خروج من الغرفة</button></div>'+col([5,6,7,8,9])+'</div></main>';
+  document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
+  if(host)$('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
+  $('l').onclick=leave;
+}
+async function leave(){
+  const c=code,host=room&&room.host===me.uid;
+  stop();
+  try{await deleteDoc(doc(db,'rooms',c,'players',me.uid));if(host)await deleteDoc(doc(db,'rooms',c))}catch(e){}
+  shell();
+}
+
+onAuthStateChanged(auth,async u=>{
+  me=u;
+  if(!u){if(fUnsub)fUnsub();fUnsub=null;friends=[];U={};login('');return}
+  try{
+    const s=await getDoc(doc(db,'users',u.uid));
+    if(s.exists()){prof=s.data();await pubProf();startFriends();shell()}
+    else{draft={name:u.displayName||'',photo:u.photoURL||'',birth:''};setup()}
+  }catch(x){login('مشكلة: '+x.code)}
+});
+</script>
+</body>
+</html>
