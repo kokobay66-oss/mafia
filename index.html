@@ -42,9 +42,10 @@ input{background:var(--bg);color:var(--tx);text-align:center}
 .wh div{height:40px;line-height:40px;scroll-snap-align:center;color:var(--mu);font-size:15px}
 .wh div.on{color:var(--tx);font-weight:800;font-size:18px}
 nav{display:flex;gap:14px;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
-nav button{flex:1;margin:0;padding:10px 4px;background:rgba(28,25,48,.85);color:var(--mu);font-size:12px;border-radius:16px}
+nav button{position:relative;flex:1;margin:0;padding:10px 4px;background:rgba(28,25,48,.85);color:var(--mu);font-size:12px;border-radius:16px}
 nav button span{display:block;font-size:22px}
 nav button.on{color:#fff;border-color:var(--ac)}
+nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolute;top:4px;left:calc(50% + 8px);background:var(--ac);color:#fff;border-radius:10px;font-size:10px;min-width:16px;padding:0 4px;line-height:16px}
 .code{font-size:38px;letter-spacing:6px;font-weight:800;direction:ltr}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#000c;padding:10px 18px;border-radius:20px;z-index:9}
 .seats{display:flex;align-items:stretch;justify-content:space-between;gap:8px;min-height:430px}
@@ -57,6 +58,15 @@ nav button.on{color:#fff;border-color:var(--ac)}
 .crown{position:absolute;top:-11px;font-size:14px}
 .sn{font-size:10px;max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;margin-top:3px;min-height:14px}
 .mid{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.fr{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--bd)}
+.fi{flex:1;text-align:right}
+.mini{width:auto;padding:8px 14px;margin:0 0 0 6px;font-size:13px;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;cursor:pointer}
+.mini.ok{background:var(--ac);border:0;color:#fff}
+.ms{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 150px)}
+.bub{max-width:78%;padding:10px 14px;border-radius:16px;background:rgba(28,25,48,.9);border:1px solid var(--bd);align-self:flex-start;word-break:break-word;line-height:1.5}
+.bub.mine{align-self:flex-end;background:linear-gradient(135deg,var(--ac),var(--ac2));border:0;color:#fff}
+.send{display:flex;gap:8px;padding:10px 16px calc(14px + env(safe-area-inset-bottom));align-items:center}
+.send input{margin:0;text-align:right;flex:1}
 </style>
 </head>
 <body>
@@ -65,7 +75,7 @@ nav button.on{color:#fff;border-color:var(--ac)}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyC0raHI8DivZ0e5QNIM9EgYf4JeO3m3pc8",
@@ -78,10 +88,11 @@ const app=initializeApp({
 const auth=getAuth(app),db=getFirestore(app);
 const $=i=>document.getElementById(i),A=$('app');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const MIN=2,MAX=10; // 5 يمين + 5 يسار. للتجربة MIN=2
+const MIN=2,MAX=10;
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const GSVG='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 let me,prof,code,room,players=[],unsubs=[],tab='play',draft={};
+let friends=[],fUnsub=null,U={};
 const stop=()=>{unsubs.forEach(f=>f());unsubs=[]};
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
 const age=b=>{const [y,m,d]=b.split('-').map(Number),n=new Date();let a=n.getFullYear()-y;if(n<new Date(n.getFullYear(),m-1,d))a--;return a};
@@ -130,6 +141,7 @@ function bindForm(edit){
   bindWheels();
   $('sv').onclick=()=>saveProfile(edit);
 }
+const pubProf=()=>setDoc(doc(db,'profiles',me.uid),{name:prof.name,photo:prof.photo,pid:prof.pid});
 async function saveProfile(edit){
   const n=draft.name.trim(),e=m=>$('e').textContent=m;
   if(n.length<2){e('الاسم قصير');return}
@@ -140,12 +152,14 @@ async function saveProfile(edit){
     if(edit){
       prof={...prof,name:n,photo:draft.photo,birth:draft.birth};
       await updateDoc(doc(db,'users',me.uid),{name:n,photo:draft.photo,birth:draft.birth});
+      await pubProf();delete U[me.uid];
       toast('انحفظ ✅');shell();
     }else{
       let pid;do{pid=String(Math.floor(100000+Math.random()*900000))}while((await getDoc(doc(db,'ids',pid))).exists());
       await setDoc(doc(db,'ids',pid),{uid:me.uid});
       prof={name:n,photo:draft.photo,birth:draft.birth,pid};
       await setDoc(doc(db,'users',me.uid),{...prof,createdAt:serverTimestamp()});
+      await pubProf();startFriends();
       shell();
     }
   }catch(x){e('مشكلة: '+x.code)}
@@ -155,17 +169,92 @@ function setup(){
   bindForm(false);
 }
 
+/* الأصدقاء والشات */
+const cnt=()=>friends.filter(f=>f.status==='received').length;
+const badge=()=>{const b=document.querySelector('nav button[data-t="msg"]');if(b)b.dataset.n=cnt()};
+function startFriends(){
+  if(fUnsub)fUnsub();
+  fUnsub=onSnapshot(collection(db,'users',me.uid,'friends'),s=>{
+    friends=s.docs.map(d=>({id:d.id,...d.data()}));badge();drawFriends();
+  });
+}
+async function getU(u){
+  if(U[u])return U[u];
+  const s=await getDoc(doc(db,'profiles',u));
+  U[u]=s.exists()?s.data():{name:'لاعب',photo:'',pid:'------'};
+  return U[u];
+}
+async function drawFriends(){
+  if(!$('fl'))return;
+  await Promise.all(friends.map(f=>getU(f.id)));
+  const el=$('fl');if(!el)return;
+  const row=(f,act)=>{const u=U[f.id];return '<div class="fr" data-f="'+f.id+'"><img class="av" src="'+esc(u.photo)+'" alt=""><div class="fi"><div class="pn">'+esc(u.name)+'</div><div class="pi">ID: '+esc(u.pid)+'</div></div>'+act+'</div>'};
+  const rq=friends.filter(f=>f.status==='received'),fr=friends.filter(f=>f.status==='friends'),sn=friends.filter(f=>f.status==='sent');
+  el.innerHTML=(rq.length?'<div class="card"><p class="c">طلبات الصداقة</p>'+rq.map(f=>row(f,'<button class="mini ok" data-a="acc" data-id="'+f.id+'">قبول</button><button class="mini" data-a="del" data-id="'+f.id+'">رفض</button>')).join('')+'</div>':'')+
+  '<div class="card"><p class="c">الأصدقاء ('+fr.length+')</p>'+(fr.length?fr.map(f=>row(f,'<span>💬</span>')).join(''):'<p class="c">ما عندك أصدقاء بعد</p>')+'</div>'+
+  (sn.length?'<div class="card"><p class="c">بانتظار الرد</p>'+sn.map(f=>row(f,'<button class="mini" data-a="del" data-id="'+f.id+'">إلغاء</button>')).join('')+'</div>':'');
+  el.querySelectorAll('[data-a]').forEach(b=>b.onclick=e=>{e.stopPropagation();b.dataset.a==='acc'?accept(b.dataset.id):removeF(b.dataset.id)});
+  el.querySelectorAll('.fr').forEach(r=>{const f=friends.find(x=>x.id===r.dataset.f);if(f&&f.status==='friends')r.onclick=()=>openChat(f.id)});
+}
+async function accept(id){
+  try{
+    await setDoc(doc(db,'users',me.uid,'friends',id),{status:'friends',at:serverTimestamp()});
+    await setDoc(doc(db,'users',id,'friends',me.uid),{status:'friends',at:serverTimestamp()});
+  }catch(x){toast('مشكلة: '+x.code)}
+}
+async function removeF(id){
+  try{await deleteDoc(doc(db,'users',me.uid,'friends',id));await deleteDoc(doc(db,'users',id,'friends',me.uid))}catch(x){toast('مشكلة: '+x.code)}
+}
+async function addFriend(){
+  const v=$('fid').value.trim(),m=t=>$('fm').textContent=t;
+  if(!/^\d{6}$/.test(v)){m('الرقم 6 أرقام');return}
+  if(v===prof.pid){m('هذا رقمك أنت 😄');return}
+  try{
+    const s=await getDoc(doc(db,'ids',v));
+    if(!s.exists()){m('ما لقيت لاعب بهذا الرقم');return}
+    const o=s.data().uid,ex=friends.find(f=>f.id===o);
+    if(ex){
+      if(ex.status==='friends'){m('هو صديقك أصلاً');return}
+      if(ex.status==='sent'){m('أرسلت له طلب من قبل');return}
+      await accept(o);m('تمت الإضافة ✅');return;
+    }
+    await setDoc(doc(db,'users',me.uid,'friends',o),{status:'sent',at:serverTimestamp()});
+    await setDoc(doc(db,'users',o,'friends',me.uid),{status:'received',at:serverTimestamp()});
+    $('fid').value='';m('انرسل الطلب ✅');
+  }catch(x){m('مشكلة: '+x.code)}
+}
+async function openChat(fid){
+  stop();
+  const u=await getU(fid),cid=[me.uid,fid].sort().join('_');
+  A.innerHTML='<div class="top"><button class="mini" id="bk" style="margin:0">رجوع ➜</button><div class="pc"><div class="pn">'+esc(u.name)+'</div><img class="av" src="'+esc(u.photo)+'" alt=""></div></div>'+
+  '<div class="ms" id="ms"></div><div class="send"><input id="mi" maxlength="500" placeholder="اكتب رسالة..."><button class="btn" id="sd" style="width:auto;padding:14px 20px;margin:0;font-size:16px">إرسال</button></div>';
+  $('bk').onclick=()=>shell();
+  const send=async()=>{
+    const t=$('mi').value.trim();if(!t)return;
+    $('mi').value='';
+    try{await addDoc(collection(db,'chats',cid,'msgs'),{from:me.uid,text:t,at:serverTimestamp()})}catch(x){toast('مشكلة: '+x.code)}
+  };
+  $('sd').onclick=send;
+  $('mi').onkeydown=e=>{if(e.key==='Enter')send()};
+  unsubs.push(onSnapshot(query(collection(db,'chats',cid,'msgs'),orderBy('at','desc'),limit(100)),s=>{
+    const el=$('ms');if(!el)return;
+    el.innerHTML=s.docs.map(d=>d.data()).reverse().map(m=>'<div class="bub'+(m.from===me.uid?' mine':'')+'">'+esc(m.text)+'</div>').join('');
+    el.scrollTop=el.scrollHeight;
+  }));
+}
+
 function shell(msg){
   stop();code=null;room=null;
   let b='';
   if(tab==='play')b='<button class="btn" id="rnd">🎲 عشوائي</button><button class="btn alt" id="cus">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
-  else if(tab==='msg')b='<div class="card c"><div style="font-size:48px">💬</div><p>الرسائل والأصدقاء قريبًا</p></div>';
+  else if(tab==='msg')b='<div class="card c"><p>رقمك: <b style="color:var(--tx);letter-spacing:2px">'+prof.pid+'</b></p><input id="fid" maxlength="6" inputmode="numeric" placeholder="رقم ID الصديق"><button class="btn alt" id="fa" style="font-size:16px;padding:14px">إضافة صديق</button><div class="err" id="fm"></div></div><div id="fl"></div>';
   else b='<h2 class="h">أنا</h2>'+formHTML(true)+'<button class="btn alt" id="lo" style="font-size:15px;padding:12px">تسجيل خروج</button>';
   const tabs=[['play','🎮','اللعب'],['msg','💬','الرسائل'],['me','👤','أنا']];
-  A.innerHTML=topbar()+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main><nav>'+
-    tabs.map(t=>'<button data-t="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
+  A.innerHTML=topbar()+'<main'+(tab==='msg'?' style="justify-content:flex-start"':'')+'>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main><nav>'+
+    tabs.map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'?cnt():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
   document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;if(tab==='me')draft={...prof};shell()});
   if(tab==='play'){$('rnd').onclick=quick;$('cus').onclick=()=>custom();$('off').onclick=()=>toast('الأوف لاين قريبًا')}
+  if(tab==='msg'){$('fa').onclick=addFriend;drawFriends()}
   if(tab==='me'){bindForm(true);$('lo').onclick=()=>signOut(auth)}
 }
 
@@ -198,73 +287,4 @@ async function joinRoom(c){
     if(!s.exists()){custom('ما لقيت الغرفة');return}
     if(s.data().status!=='lobby'){custom('اللعبة بدأت');return}
     const si=await seatInfo(c);
-    if(si.seat<0){custom('الغرفة ممتلئة');return}
-    await addMe(c,si.seat);enter(c);
-  }catch(x){custom('مشكلة: '+x.code)}
-}
-async function quick(){
-  $('e2').textContent='ندوّر لك على غرفة...';
-  try{
-    const q=await getDocs(query(collection(db,'rooms'),where('public','==',true),where('status','==','lobby'),limit(10)));
-    for(const d of q.docs){
-      const t=d.data().createdAt;
-      if(t&&Date.now()-t.toMillis()>20*60000)continue;
-      const si=await seatInfo(d.id);
-      if(si.n>0&&si.seat>=0){await addMe(d.id,si.seat);enter(d.id);return}
-    }
-    await newRoom(true);
-  }catch(x){shell('مشكلة: '+x.code)}
-}
-
-function enter(c){
-  stop();code=c;
-  unsubs.push(onSnapshot(doc(db,'rooms',c),s=>{
-    if(!s.exists()){shell('المضيف سكّر الغرفة');return}
-    room=s.data();render();
-  }));
-  unsubs.push(onSnapshot(query(collection(db,'rooms',c,'players'),orderBy('joinedAt')),s=>{
-    players=s.docs.map(d=>({id:d.id,...d.data()}));render();
-  }));
-}
-function seatHTML(i){
-  const p=players.find(x=>x.seat===i);
-  if(!p)return '<div class="seatw"><div class="seat" data-seat="'+i+'">+</div><div class="sn"></div></div>';
-  return '<div class="seatw"><div class="seat full'+(p.id===me.uid?' me':'')+'">'+(p.id===room.host?'<span class="crown">👑</span>':'')+'<img src="'+esc(p.photo)+'" alt=""></div><div class="sn">'+esc(p.name)+'</div></div>';
-}
-const col=a=>'<div class="col">'+a.map(seatHTML).join('')+'</div>';
-async function moveSeat(i){
-  if(players.some(p=>p.seat===i))return;
-  try{await updateDoc(doc(db,'rooms',code,'players',me.uid),{seat:i})}catch(e){toast('مشكلة: '+e.code)}
-}
-function render(){
-  if(!room||!code)return;
-  const host=room.host===me.uid;
-  if(room.status==='playing'){A.innerHTML='<main><h1 class="h">🎬</h1><div class="card c"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div></main>';return}
-  A.innerHTML=topbar()+'<main style="justify-content:flex-start"><div class="seats">'+col([0,1,2,3,4])+
-  '<div class="mid"><div class="card c"><p>'+(room.public?'غرفة عشوائية':'كود الغرفة')+'</p><div class="code">'+code+'</div><p>اللاعبين '+players.length+'/'+MAX+'</p></div>'+
-  '<p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
-  (host?'<button class="btn" id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+')':'')+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
-  '<button class="btn ghost" id="l">خروج من الغرفة</button></div>'+col([5,6,7,8,9])+'</div></main>';
-  document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
-  if(host)$('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
-  $('l').onclick=leave;
-}
-async function leave(){
-  const c=code,host=room&&room.host===me.uid;
-  stop();
-  try{await deleteDoc(doc(db,'rooms',c,'players',me.uid));if(host)await deleteDoc(doc(db,'rooms',c))}catch(e){}
-  shell();
-}
-
-onAuthStateChanged(auth,async u=>{
-  me=u;
-  if(!u){login('');return}
-  try{
-    const s=await getDoc(doc(db,'users',u.uid));
-    if(s.exists()){prof=s.data();shell()}
-    else{draft={name:u.displayName||'',photo:u.photoURL||'',birth:''};setup()}
-  }catch(x){login('مشكلة: '+x.code)}
-});
-</script>
-</body>
-</html>
+    if(si.seat<0){custom('
