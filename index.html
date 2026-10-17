@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" translate="no">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="google" content="notranslate">
 <title>مجلس المافيا</title>
 <style>
-:root{--bg:#0f0d1a;--card:#1c1930;--tx:#f3f0ff;--mu:#9d97bd;--ac:#e0475b;--ac2:#ff7a59;--bd:#2f2b4a}
+:root{--bg:#0f0d1a;--card:#1c1930;--cb:rgba(28,25,48,.78);--tx:#f3f0ff;--mu:#9d97bd;--ac:#e0475b;--ac2:#ff7a59;--bd:#2f2b4a}
+body.light{--bg:#fff;--card:#f4f3fa;--cb:#f4f3fa;--tx:#1d1a2b;--mu:#7a7590;--bd:#e6e3ef}
+body.light #bg{display:none}
+body.light .h{text-shadow:none}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;min-height:100vh}
 #bg{position:fixed;inset:0;z-index:-1;background:#120a06 url(bg.jpg) center/cover no-repeat}
@@ -19,7 +23,7 @@ body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-
 .pn{font-weight:700;font-size:14px}.pi{font-size:11px;color:var(--mu)}
 main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:16px}
 .h{text-align:center;margin:0 0 10px;text-shadow:0 0 22px rgba(224,71,91,.6)}
-.card{background:rgba(28,25,48,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:10px 0}
+.card{background:var(--cb);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:10px 0}
 .c{text-align:center}
 p{color:var(--mu);margin:6px 0;line-height:1.7}
 .l{text-align:right;font-size:13px;margin:10px 0 2px}
@@ -34,7 +38,7 @@ input{background:var(--bg);color:var(--tx);text-align:center}
 .sep{height:14px}
 .err{color:var(--ac);text-align:center;min-height:22px;font-size:14px}
 .avw{position:relative;display:inline-block;cursor:pointer}
-.cam{position:absolute;bottom:0;left:0;background:var(--ac);border-radius:50%;width:30px;height:30px;line-height:30px;font-size:15px}
+.cam{position:absolute;bottom:0;left:0;background:var(--ac);border-radius:50%;width:30px;height:30px;line-height:30px;font-size:15px;color:#fff}
 .wheels{position:relative;display:flex;gap:6px;margin:6px 0}
 .wheels::after{content:"";position:absolute;left:0;right:0;top:50%;height:40px;margin-top:-20px;border-top:1px solid var(--ac);border-bottom:1px solid var(--ac);pointer-events:none}
 .wh{flex:1;height:160px;overflow-y:scroll;scroll-snap-type:y mandatory;text-align:center;padding:60px 0;scrollbar-width:none;background:var(--bg);border-radius:12px}
@@ -42,12 +46,12 @@ input{background:var(--bg);color:var(--tx);text-align:center}
 .wh div{height:40px;line-height:40px;scroll-snap-align:center;color:var(--mu);font-size:15px}
 .wh div.on{color:var(--tx);font-weight:800;font-size:18px}
 nav{display:flex;gap:14px;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
-nav button{position:relative;flex:1;margin:0;padding:10px 4px;background:rgba(28,25,48,.85);color:var(--mu);font-size:12px;border-radius:16px}
+nav button{position:relative;flex:1;margin:0;padding:10px 4px;background:var(--cb);color:var(--mu);font-size:12px;border-radius:16px}
 nav button span{display:block;font-size:22px}
-nav button.on{color:#fff;border-color:var(--ac)}
+nav button.on{color:var(--tx);border-color:var(--ac)}
 nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolute;top:4px;left:calc(50% + 8px);background:var(--ac);color:#fff;border-radius:10px;font-size:10px;min-width:16px;padding:0 4px;line-height:16px}
 .code{font-size:38px;letter-spacing:6px;font-weight:800;direction:ltr}
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#000c;padding:10px 18px;border-radius:20px;z-index:9}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 18px;border-radius:20px;z-index:99}
 .seats{display:flex;align-items:stretch;justify-content:space-between;gap:8px;min-height:430px}
 .col{display:flex;flex-direction:column;justify-content:space-around;align-items:center;width:58px}
 .seatw{display:flex;flex-direction:column;align-items:center}
@@ -63,10 +67,27 @@ nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolu
 .mini{width:auto;padding:8px 14px;margin:0 0 0 6px;font-size:13px;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;cursor:pointer}
 .mini.ok{background:var(--ac);border:0;color:#fff}
 .ms{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 150px)}
-.bub{max-width:78%;padding:10px 14px;border-radius:16px;background:rgba(28,25,48,.9);border:1px solid var(--bd);align-self:flex-start;word-break:break-word;line-height:1.5}
+.bub{max-width:78%;padding:10px 14px;border-radius:16px;background:var(--card);border:1px solid var(--bd);align-self:flex-start;word-break:break-word;line-height:1.5}
 .bub.mine{align-self:flex-end;background:linear-gradient(135deg,var(--ac),var(--ac2));border:0;color:#fff}
 .send{display:flex;gap:8px;padding:10px 16px calc(14px + env(safe-area-inset-bottom));align-items:center}
 .send input{margin:0;text-align:right;flex:1}
+.mh{display:flex;justify-content:space-between;align-items:center;padding:18px 16px 8px;gap:10px}
+.mh h1{margin:0;font-size:28px}
+.ics{display:flex;gap:10px}
+.ib{width:44px;height:44px;border-radius:50%;padding:0;margin:0;font-size:20px;background:var(--card);border:1px solid var(--bd);color:var(--tx);cursor:pointer}
+.menu{position:fixed;top:72px;left:16px;z-index:30;background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 8px 30px #0006;overflow:hidden;min-width:200px}
+.menu div{padding:14px 18px;border-bottom:1px solid var(--bd);cursor:pointer}
+.menu div:last-child{border:0}
+.list{flex:1;overflow-y:auto}
+.cv{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bd);cursor:pointer}
+.cv .av,.gav{width:52px;height:52px;flex:none}
+.gav{border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:24px}
+.cv .t{flex:1;min-width:0}
+.cv .n{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cv .m{color:var(--mu);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+.cv .d{color:var(--mu);font-size:11px;align-self:flex-start;margin-top:6px}
+.empty{text-align:center;color:var(--mu);padding:60px 20px;line-height:1.9}
+.pad{padding:0 16px}
 </style>
 </head>
 <body>
@@ -75,7 +96,7 @@ nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolu
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyC0raHI8DivZ0e5QNIM9EgYf4JeO3m3pc8",
@@ -92,15 +113,19 @@ const MIN=2,MAX=10;
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const GSVG='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 let me,prof,code,room,players=[],unsubs=[],tab='play',draft={};
-let friends=[],fUnsub=null,U={};
+let friends=[],chats=[],grps=[],fU=[],U={},view='';
 const stop=()=>{unsubs.forEach(f=>f());unsubs=[]};
+const th=l=>document.body.classList.toggle('light',l);
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
 const age=b=>{const [y,m,d]=b.split('-').map(Number),n=new Date();let a=n.getFullYear()-y;if(n<new Date(n.getFullYear(),m-1,d))a--;return a};
 const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const s=Math.min(i.width,i.height);c.getContext('2d').drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,128,128);r(c.toDataURL('image/jpeg',.8))};i.src=URL.createObjectURL(f)});
+const tm=t=>t&&t.toMillis?t.toMillis():Date.now();
+const fmt=t=>{if(!t)return '';const d=t.toDate?t.toDate():new Date(t),n=new Date(),p=x=>String(x).padStart(2,'0');return d.toDateString()===n.toDateString()?p(d.getHours())+':'+p(d.getMinutes()):d.getDate()+'/'+(d.getMonth()+1)};
 const topbar=()=>'<div class="top"><div class="pc"><img class="av" src="'+esc(prof.photo)+'"><div><div class="pn">'+esc(prof.name)+'</div><div class="pi">ID: '+prof.pid+'</div></div></div><div class="logo">🎭 مجلس المافيا</div></div>';
+const hdr=t=>'<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">'+t+'</h1><span style="width:44px"></span></div>';
 
 function login(msg){
-  stop();
+  stop();th(false);
   A.innerHTML='<main><h1 class="h">🎭 مجلس المافيا</h1><div class="card c"><p>سجّل دخولك عشان تلعب</p></div><button class="gbtn" id="g">'+GSVG+'<span>الدخول عن طريق قوقل</span></button><div class="err" id="e">'+esc(msg)+'</div></main>';
   $('g').onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){login('ما انفتح الدخول: '+e.code)}};
 }
@@ -129,7 +154,6 @@ function bindWheels(){
   });
   readB();
 }
-
 function formHTML(edit){
   return '<div class="card c"><label class="avw"><img id="pv" class="av big" src="'+esc(draft.photo)+'"><span class="cam">📷</span><input type="file" id="pf" accept="image/*" hidden></label>'+
   '<input id="nm" maxlength="14" placeholder="اسمك في اللعبة" value="'+esc(draft.name)+'">'+wheelsHTML()+
@@ -165,18 +189,18 @@ async function saveProfile(edit){
   }catch(x){e('مشكلة: '+x.code)}
 }
 function setup(){
+  th(false);
   A.innerHTML='<div class="top"><div class="logo">🎭 مجلس المافيا</div></div><main><h2 class="h">أنشئ حسابك</h2>'+formHTML(false)+'</main>';
   bindForm(false);
-}
-
-/* الأصدقاء والشات */
+}/* الأصدقاء والمجموعات والشات */
 const cnt=()=>friends.filter(f=>f.status==='received').length;
 const badge=()=>{const b=document.querySelector('nav button[data-t="msg"]');if(b)b.dataset.n=cnt()};
+const redraw=()=>{if(view==='conv')drawConvs();if(view==='friends')drawFriends()};
 function startFriends(){
-  if(fUnsub)fUnsub();
-  fUnsub=onSnapshot(collection(db,'users',me.uid,'friends'),s=>{
-    friends=s.docs.map(d=>({id:d.id,...d.data()}));badge();drawFriends();
-  });
+  fU.forEach(f=>f());fU=[];
+  fU.push(onSnapshot(collection(db,'users',me.uid,'friends'),s=>{friends=s.docs.map(d=>({id:d.id,...d.data()}));badge();redraw()}));
+  fU.push(onSnapshot(query(collection(db,'chats'),where('members','array-contains',me.uid)),s=>{chats=s.docs.map(d=>({id:d.id,...d.data()}));redraw()}));
+  fU.push(onSnapshot(query(collection(db,'groups'),where('members','array-contains',me.uid)),s=>{grps=s.docs.map(d=>({id:d.id,...d.data()}));redraw()}));
 }
 async function getU(u){
   if(U[u])return U[u];
@@ -184,17 +208,36 @@ async function getU(u){
   U[u]=s.exists()?s.data():{name:'لاعب',photo:'',pid:'------'};
   return U[u];
 }
+async function drawConvs(){
+  if(!$('cl'))return;
+  const other=c=>c.members.find(x=>x!==me.uid);
+  await Promise.all(chats.map(c=>getU(other(c))));
+  const el=$('cl');if(!el)return;
+  const items=[
+    ...chats.map(c=>({k:'f',id:other(c),name:U[other(c)].name,photo:U[other(c)].photo,last:c.last,at:c.lastAt})),
+    ...grps.map(g=>({k:'g',id:g.id,name:g.name,last:g.last,at:g.lastAt}))
+  ].sort((a,b)=>tm(b.at)-tm(a.at));
+  el.innerHTML=items.length?items.map(i=>'<div class="cv" data-k="'+i.k+'" data-id="'+i.id+'">'+(i.k==='g'?'<div class="gav">👥</div>':'<img class="av" src="'+esc(i.photo)+'" alt="">')+'<div class="t"><div class="n">'+esc(i.name)+'</div><div class="m">'+esc(i.last||'')+'</div></div><div class="d">'+fmt(i.at)+'</div></div>').join(''):'<div class="empty">ما عندك محادثات بعد<br>اضغط 👥 وابدأ مع أصدقائك</div>';
+  el.querySelectorAll('.cv').forEach(r=>r.onclick=()=>openChat(r.dataset.k,r.dataset.id));
+}
+function friendsScreen(){
+  stop();view='friends';th(true);
+  A.innerHTML=hdr('الأصدقاء')+'<div class="pad"><div class="card c"><p>رقمك: <b style="color:var(--tx);letter-spacing:2px">'+prof.pid+'</b></p><input id="fid" maxlength="6" inputmode="numeric" placeholder="رقم ID الصديق"><button class="btn alt" id="fa" style="font-size:16px;padding:14px">إضافة صديق</button><div class="err" id="fm"></div></div><input id="fs" placeholder="🔍 ابحث في أصدقائك"><div id="fl"></div></div>';
+  $('bk').onclick=()=>shell();$('fa').onclick=addFriend;$('fs').oninput=drawFriends;drawFriends();
+}
 async function drawFriends(){
   if(!$('fl'))return;
   await Promise.all(friends.map(f=>getU(f.id)));
   const el=$('fl');if(!el)return;
+  const qs=($('fs')?$('fs').value:'').trim().toLowerCase();
+  const ok=f=>!qs||U[f.id].name.toLowerCase().includes(qs)||String(U[f.id].pid).includes(qs);
   const row=(f,act)=>{const u=U[f.id];return '<div class="fr" data-f="'+f.id+'"><img class="av" src="'+esc(u.photo)+'" alt=""><div class="fi"><div class="pn">'+esc(u.name)+'</div><div class="pi">ID: '+esc(u.pid)+'</div></div>'+act+'</div>'};
-  const rq=friends.filter(f=>f.status==='received'),fr=friends.filter(f=>f.status==='friends'),sn=friends.filter(f=>f.status==='sent');
+  const rq=friends.filter(f=>f.status==='received'),fr=friends.filter(f=>f.status==='friends'&&ok(f)),sn=friends.filter(f=>f.status==='sent'&&ok(f));
   el.innerHTML=(rq.length?'<div class="card"><p class="c">طلبات الصداقة</p>'+rq.map(f=>row(f,'<button class="mini ok" data-a="acc" data-id="'+f.id+'">قبول</button><button class="mini" data-a="del" data-id="'+f.id+'">رفض</button>')).join('')+'</div>':'')+
-  '<div class="card"><p class="c">الأصدقاء ('+fr.length+')</p>'+(fr.length?fr.map(f=>row(f,'<span>💬</span>')).join(''):'<p class="c">ما عندك أصدقاء بعد</p>')+'</div>'+
+  '<div class="card"><p class="c">الأصدقاء ('+fr.length+')</p>'+(fr.length?fr.map(f=>row(f,'<span>💬</span>')).join(''):'<p class="c">ما فيه أصدقاء</p>')+'</div>'+
   (sn.length?'<div class="card"><p class="c">بانتظار الرد</p>'+sn.map(f=>row(f,'<button class="mini" data-a="del" data-id="'+f.id+'">إلغاء</button>')).join('')+'</div>':'');
   el.querySelectorAll('[data-a]').forEach(b=>b.onclick=e=>{e.stopPropagation();b.dataset.a==='acc'?accept(b.dataset.id):removeF(b.dataset.id)});
-  el.querySelectorAll('.fr').forEach(r=>{const f=friends.find(x=>x.id===r.dataset.f);if(f&&f.status==='friends')r.onclick=()=>openChat(f.id)});
+  el.querySelectorAll('.fr').forEach(r=>{const f=friends.find(x=>x.id===r.dataset.f);if(f&&f.status==='friends')r.onclick=()=>openChat('f',f.id)});
 }
 async function accept(id){
   try{
@@ -223,51 +266,106 @@ async function addFriend(){
     $('fid').value='';m('انرسل الطلب ✅');
   }catch(x){m('مشكلة: '+x.code)}
 }
-async function openChat(fid){
-  stop();
-  const u=await getU(fid),cid=[me.uid,fid].sort().join('_');
-  A.innerHTML='<div class="top"><button class="mini" id="bk" style="margin:0">رجوع ➜</button><div class="pc"><div class="pn">'+esc(u.name)+'</div><img class="av" src="'+esc(u.photo)+'" alt=""></div></div>'+
-  '<div class="ms" id="ms"></div><div class="send"><input id="mi" maxlength="500" placeholder="اكتب رسالة..."><button class="btn" id="sd" style="width:auto;padding:14px 20px;margin:0;font-size:16px">إرسال</button></div>';
+async function openChat(k,id){
+  stop();view='chat';th(true);
+  let title,path,gid=null,cid=null;
+  if(k==='f'){const u=await getU(id);title=u.name;cid=[me.uid,id].sort().join('_');path=['chats',cid,'msgs']}
+  else{
+    const s=await getDoc(doc(db,'groups',id));
+    if(!s.exists()){toast('المجموعة غير موجودة');shell();return}
+    title=s.data().name;gid=id;path=['groups',id,'msgs'];
+  }
+  A.innerHTML='<div class="mh"><button class="ib" id="bk">➜</button><div class="pn" style="font-size:18px;flex:1;text-align:center">'+esc(title)+'</div><span style="width:44px"></span></div><div class="ms" id="ms"></div><div class="send"><input id="mi" maxlength="500" placeholder="اكتب رسالة..."><button class="btn" id="sd" style="width:auto;padding:14px 20px;margin:0;font-size:16px">إرسال</button></div>';
   $('bk').onclick=()=>shell();
   const send=async()=>{
     const t=$('mi').value.trim();if(!t)return;
     $('mi').value='';
-    try{await addDoc(collection(db,'chats',cid,'msgs'),{from:me.uid,text:t,at:serverTimestamp()})}catch(x){toast('مشكلة: '+x.code)}
+    try{
+      await addDoc(collection(db,...path),{from:me.uid,text:t,at:serverTimestamp()});
+      if(cid)await setDoc(doc(db,'chats',cid),{members:[me.uid,id],last:t,lastAt:serverTimestamp(),lastFrom:me.uid},{merge:true});
+      else await updateDoc(doc(db,'groups',gid),{last:t,lastAt:serverTimestamp()});
+    }catch(x){toast('مشكلة: '+x.code)}
   };
   $('sd').onclick=send;
   $('mi').onkeydown=e=>{if(e.key==='Enter')send()};
-  unsubs.push(onSnapshot(query(collection(db,'chats',cid,'msgs'),orderBy('at','desc'),limit(100)),s=>{
+  unsubs.push(onSnapshot(query(collection(db,...path),orderBy('at','desc'),limit(100)),async s=>{
+    const list=s.docs.map(d=>d.data()).reverse();
+    if(gid)await Promise.all([...new Set(list.map(m=>m.from))].map(getU));
     const el=$('ms');if(!el)return;
-    el.innerHTML=s.docs.map(d=>d.data()).reverse().map(m=>'<div class="bub'+(m.from===me.uid?' mine':'')+'">'+esc(m.text)+'</div>').join('');
+    el.innerHTML=list.map(m=>'<div class="bub'+(m.from===me.uid?' mine':'')+'">'+(gid&&m.from!==me.uid?'<div class="pi" style="color:inherit;opacity:.7">'+esc(U[m.from].name)+'</div>':'')+esc(m.text)+'</div>').join('');
     el.scrollTop=el.scrollHeight;
   }));
 }
-
-function shell(msg){
-  stop();code=null;room=null;
-  let b='';
-  if(tab==='play')b='<button class="btn" id="rnd">🎲 عشوائي</button><button class="btn alt" id="cus">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
-  else if(tab==='msg')b='<div class="card c"><p>رقمك: <b style="color:var(--tx);letter-spacing:2px">'+prof.pid+'</b></p><input id="fid" maxlength="6" inputmode="numeric" placeholder="رقم ID الصديق"><button class="btn alt" id="fa" style="font-size:16px;padding:14px">إضافة صديق</button><div class="err" id="fm"></div></div><div id="fl"></div>';
-  else b='<h2 class="h">أنا</h2>'+formHTML(true)+'<button class="btn alt" id="lo" style="font-size:15px;padding:12px">تسجيل خروج</button>';
-  const tabs=[['play','🎮','اللعب'],['msg','💬','الرسائل'],['me','👤','أنا']];
-  A.innerHTML=topbar()+'<main'+(tab==='msg'?' style="justify-content:flex-start"':'')+'>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main><nav>'+
-    tabs.map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'?cnt():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
-  document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;if(tab==='me')draft={...prof};shell()});
-  if(tab==='play'){$('rnd').onclick=quick;$('cus').onclick=()=>custom();$('off').onclick=()=>toast('الأوف لاين قريبًا')}
-  if(tab==='msg'){$('fa').onclick=addFriend;drawFriends()}
-  if(tab==='me'){bindForm(true);$('lo').onclick=()=>signOut(auth)}
+function toggleMenu(){
+  const old=$('mn');if(old){old.remove();return}
+  const m=document.createElement('div');m.className='menu';m.id='mn';
+  m.innerHTML='<div data-a="f">➕ إضافة صديق</div><div data-a="c">👥 إنشاء مجموعة</div><div data-a="s">🔎 البحث عن مجموعة</div>';
+  document.body.appendChild(m);
+  m.onclick=e=>{const a=e.target.dataset.a;m.remove();if(a==='f')friendsScreen();if(a==='c')groupCreate();if(a==='s')groupSearch()};
+  setTimeout(()=>document.addEventListener('click',function h(e){if(!m.contains(e.target)){m.remove();document.removeEventListener('click',h)}}),0);
+}
+function groupCreate(){
+  stop();view='gc';th(true);
+  A.innerHTML=hdr('إنشاء مجموعة')+'<div class="pad"><div class="card c"><div class="gav" style="margin:0 auto 10px;width:80px;height:80px;font-size:36px">👥</div><input id="gn" maxlength="24" placeholder="اسم المجموعة"><div class="err" id="ge"></div><button class="btn" id="gs">إنشاء</button></div></div>';
+  $('bk').onclick=()=>shell();
+  $('gs').onclick=async()=>{
+    const n=$('gn').value.trim();
+    if(n.length<2){$('ge').textContent='الاسم قصير';return}
+    try{
+      let g;do{g=String(Math.floor(10000+Math.random()*90000))}while((await getDoc(doc(db,'groups',g))).exists());
+      await setDoc(doc(db,'groups',g),{name:n,owner:me.uid,members:[me.uid],last:'',lastAt:serverTimestamp()});
+      openChat('g',g);
+    }catch(x){$('ge').textContent='مشكلة: '+x.code}
+  };
+}
+function groupSearch(){
+  stop();view='gs';th(true);
+  A.innerHTML=hdr('البحث عن مجموعة')+'<div class="pad"><input id="gq" placeholder="اسم المجموعة أو رقمها (5 أرقام)"><button class="btn alt" id="gb" style="font-size:16px;padding:14px">بحث</button><div id="gr"></div></div>';
+  $('bk').onclick=()=>shell();
+  $('gb').onclick=async()=>{
+    const q=$('gq').value.trim(),el=$('gr');
+    if(!q)return;
+    el.innerHTML='<p class="c">...</p>';
+    try{
+      let docs=[];
+      if(/^\d{5}$/.test(q)){const s=await getDoc(doc(db,'groups',q));if(s.exists())docs=[s]}
+      else docs=(await getDocs(query(collection(db,'groups'),where('name','>=',q),where('name','<=',q+'\uf8ff'),limit(15)))).docs;
+      el.innerHTML=docs.length?docs.map(d=>{const g=d.data(),mem=g.members.includes(me.uid);return '<div class="cv"><div class="gav">👥</div><div class="t"><div class="n">'+esc(g.name)+'</div><div class="m">'+g.members.length+' عضو · رقم '+d.id+'</div></div><button class="mini'+(mem?'':' ok')+'" data-j="'+d.id+'" data-m="'+(mem?1:0)+'">'+(mem?'فتح':'انضمام')+'</button></div>'}).join(''):'<div class="empty">ما لقيت شي</div>';
+      el.querySelectorAll('[data-j]').forEach(b=>b.onclick=async()=>{
+        try{if(b.dataset.m!=='1')await updateDoc(doc(db,'groups',b.dataset.j),{members:arrayUnion(me.uid)});openChat('g',b.dataset.j)}catch(x){toast('مشكلة: '+x.code)}
+      });
+    }catch(x){el.innerHTML='<p class="err">مشكلة: '+esc(x.code)+'</p>'}
+  };
 }
 
+/* القوائم الرئيسية */
+const navHTML=()=>'<nav>'+[['play','🎮','اللعب'],['msg','💬','الرسائل'],['me','👤','أنا']].map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'?cnt():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
+const bindNav=()=>document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;if(tab==='me')draft={...prof};shell()});
+function shell(msg){
+  stop();code=null;room=null;view='';th(tab!=='play');
+  if(tab==='msg'){
+    view='conv';
+    A.innerHTML='<div class="mh"><h1>الرسائل</h1><div class="ics"><button class="ib" id="fr">👥</button><button class="ib" id="pl">➕</button></div></div><div class="list" id="cl"></div>'+navHTML();
+    bindNav();$('pl').onclick=toggleMenu;$('fr').onclick=friendsScreen;drawConvs();
+    return;
+  }
+  let b='';
+  if(tab==='play')b='<button class="btn" id="rnd">🎲 عشوائي</button><button class="btn alt" id="cus">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
+  else b='<h2 class="h">أنا</h2>'+formHTML(true)+'<button class="btn alt" id="lo" style="font-size:15px;padding:12px">تسجيل خروج</button>';
+  A.innerHTML=topbar()+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
+  bindNav();
+  if(tab==='play'){$('rnd').onclick=quick;$('cus').onclick=()=>custom();$('off').onclick=()=>toast('الأوف لاين قريبًا')}
+  else{bindForm(true);$('lo').onclick=()=>signOut(auth)}
+}
 function custom(msg){
+  th(false);
   A.innerHTML=topbar()+'<main><div class="card c"><button class="btn" id="c">إنشاء غرفة جديدة</button></div>'+
   '<div class="card c"><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة"><button class="btn alt" id="j" style="font-size:16px;padding:14px">انضم</button></div>'+
   '<div class="err">'+esc(msg||'')+'</div><button class="btn ghost" id="bk">رجوع</button></main>';
   $('c').onclick=async()=>{try{await newRoom(false)}catch(x){custom('مشكلة: '+x.code)}};
   $('j').onclick=()=>joinRoom($('cd').value.trim());
   $('bk').onclick=()=>shell();
-}
-
-/* الغرف والمقاعد */
+    }/* الغرف والمقاعد */
 const addMe=(c,seat)=>setDoc(doc(db,'rooms',c,'players',me.uid),{name:prof.name,photo:prof.photo,seat,joinedAt:serverTimestamp()});
 async function seatInfo(c){
   const s=await getDocs(collection(db,'rooms',c,'players'));
@@ -287,7 +385,7 @@ async function joinRoom(c){
     if(!s.exists()){custom('ما لقيت الغرفة');return}
     if(s.data().status!=='lobby'){custom('اللعبة بدأت');return}
     const si=await seatInfo(c);
-        if(si.seat<0){custom('الغرفة ممتلئة');return}
+    if(si.seat<0){custom('الغرفة ممتلئة');return}
     await addMe(c,si.seat);enter(c);
   }catch(x){custom('مشكلة: '+x.code)}
 }
@@ -304,9 +402,8 @@ async function quick(){
     await newRoom(true);
   }catch(x){shell('مشكلة: '+x.code)}
 }
-
 function enter(c){
-  stop();code=c;
+  stop();code=c;th(false);
   unsubs.push(onSnapshot(doc(db,'rooms',c),s=>{
     if(!s.exists()){shell('المضيف سكّر الغرفة');return}
     room=s.data();render();
@@ -347,7 +444,7 @@ async function leave(){
 
 onAuthStateChanged(auth,async u=>{
   me=u;
-  if(!u){if(fUnsub)fUnsub();fUnsub=null;friends=[];U={};login('');return}
+  if(!u){fU.forEach(f=>f());fU=[];friends=[];chats=[];grps=[];U={};login('');return}
   try{
     const s=await getDoc(doc(db,'users',u.uid));
     if(s.exists()){prof=s.data();await pubProf();startFriends();shell()}
