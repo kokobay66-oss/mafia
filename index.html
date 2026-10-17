@@ -14,7 +14,7 @@
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,getDoc,setDoc,updateDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyC0raHI8DivZ0e5QNIM9EgYf4JeO3m3pc8",
@@ -26,13 +26,13 @@ const app=initializeApp({
 });
 const auth=getAuth(app),db=getFirestore(app);
 const SOC=import('./social.js?'+Date.now()).catch(e=>{console.error(e);return null});
+const ROO=import('./rooms.js?'+Date.now()).catch(e=>{console.error(e);return null});
 const $=i=>document.getElementById(i),A=$('app');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const MIN=2,MAX=10;
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const GSVG='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
-let me,prof,code,room,players=[],unsubs=[],tab='play',draft={},Social=null,inited=false;
-const stop=()=>{unsubs.forEach(f=>f());unsubs=[];if(Social)Social.stopChat()};
+let me,prof,unsubs=[],tab='play',draft={},Social=null,Rooms=null,inited=false;
+const stop=()=>{unsubs.forEach(f=>f());unsubs=[];if(Social)Social.stopChat();if(Rooms)Rooms.stopRoom()};
 const th=l=>{document.body.classList.toggle('light',l);A.classList.remove('fix')};
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
 const age=b=>{const [y,m,d]=b.split('-').map(Number),n=new Date();let a=n.getFullYear()-y;if(n<new Date(n.getFullYear(),m-1,d))a--;return a};
@@ -115,112 +115,31 @@ function setup(){
 const navHTML=()=>'<nav>'+[['play','🎮','اللعب'],['msg','💬','الرسائل'],['me','👤','أنا']].map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'&&Social?Social.badgeN():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
 const bindNav=()=>document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;if(tab==='me')draft={...prof};shell()});
 function shell(msg){
-  stop();code=null;room=null;th(tab!=='play');
+  stop();th(tab!=='play');
   if(tab==='msg'){
     if(Social){Social.tabScreen();return}
     A.innerHTML='<main><div class="empty">تعذر تحميل الرسائل<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
     bindNav();return;
   }
   let b='';
-  if(tab==='play')b='<button class="btn" id="rnd">🎲 عشوائي</button><button class="btn alt" id="cus">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
+  if(tab==='play')b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
   else b='<h2 class="h">أنا</h2>'+formHTML(true)+'<button class="btn alt" id="lo" style="font-size:15px;padding:12px">تسجيل خروج</button>';
   A.innerHTML=topbar()+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
   bindNav();
-  if(tab==='play'){$('rnd').onclick=quick;$('cus').onclick=()=>custom();$('off').onclick=()=>toast('الأوف لاين قريبًا')}
+  if(tab==='play'){
+    const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
+    $('rc').onclick=R(()=>Rooms.quick('classic'));
+    $('rm2').onclick=R(()=>Rooms.quick('mad'));
+    $('cus').onclick=R(()=>Rooms.custom());
+    $('off').onclick=()=>toast('الأوف لاين قريبًا');
+  }
   else{bindForm(true);$('lo').onclick=()=>signOut(auth)}
 }
-function custom(msg){
-  th(false);
-  A.innerHTML=topbar()+'<main><div class="card c"><button class="btn" id="c">إنشاء غرفة جديدة</button></div>'+
-  '<div class="card c"><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة"><button class="btn alt" id="j" style="font-size:16px;padding:14px">انضم</button></div>'+
-  '<div class="err">'+esc(msg||'')+'</div><button class="btn ghost" id="bk">رجوع</button></main>';
-  $('c').onclick=async()=>{try{await newRoom(false)}catch(x){custom('مشكلة: '+x.code)}};
-  $('j').onclick=()=>joinRoom($('cd').value.trim());
-  $('bk').onclick=()=>shell();
-}
-
-/* الغرف والمقاعد */
-const addMe=(c,seat)=>setDoc(doc(db,'rooms',c,'players',me.uid),{name:prof.name,photo:prof.photo,seat,joinedAt:serverTimestamp()});
-async function seatInfo(c){
-  const s=await getDocs(collection(db,'rooms',c,'players'));
-  const t=new Set(s.docs.map(d=>d.data().seat));
-  let seat=-1;for(let i=0;i<MAX;i++)if(!t.has(i)){seat=i;break}
-  return {seat,n:s.size};
-}
-async function newRoom(pub){
-  let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
-  await setDoc(doc(db,'rooms',c),{host:me.uid,status:'lobby',public:pub,createdAt:serverTimestamp()});
-  await addMe(c,0);enter(c);
-}
-async function joinRoom(c){
-  if(c.length!==4){custom('الكود 4 أرقام');return}
-  try{
-    const s=await getDoc(doc(db,'rooms',c));
-    if(!s.exists()){custom('ما لقيت الغرفة');return}
-    if(s.data().status!=='lobby'){custom('اللعبة بدأت');return}
-    const si=await seatInfo(c);
-    if(si.seat<0){custom('الغرفة ممتلئة');return}
-    await addMe(c,si.seat);enter(c);
-  }catch(x){custom('مشكلة: '+x.code)}
-}
-async function quick(){
-  $('e2').textContent='ندوّر لك على غرفة...';
-  try{
-    const q=await getDocs(query(collection(db,'rooms'),where('public','==',true),where('status','==','lobby'),limit(10)));
-    for(const d of q.docs){
-      const t=d.data().createdAt;
-      if(t&&Date.now()-t.toMillis()>20*60000)continue;
-      const si=await seatInfo(d.id);
-      if(si.n>0&&si.seat>=0){await addMe(d.id,si.seat);enter(d.id);return}
-    }
-    await newRoom(true);
-  }catch(x){shell('مشكلة: '+x.code)}
-}
-function enter(c){
-  stop();code=c;th(false);
-  unsubs.push(onSnapshot(doc(db,'rooms',c),s=>{
-    if(!s.exists()){shell('المضيف سكّر الغرفة');return}
-    room=s.data();render();
-  }));
-  unsubs.push(onSnapshot(query(collection(db,'rooms',c,'players'),orderBy('joinedAt')),s=>{
-    players=s.docs.map(d=>({id:d.id,...d.data()}));render();
-  }));
-}
-function seatHTML(i){
-  const p=players.find(x=>x.seat===i);
-  if(!p)return '<div class="seatw"><div class="seat" data-seat="'+i+'">+</div><div class="sn"></div></div>';
-  return '<div class="seatw"><div class="seat full'+(p.id===me.uid?' me':'')+'">'+(p.id===room.host?'<span class="crown">👑</span>':'')+'<img src="'+esc(p.photo)+'" alt=""></div><div class="sn">'+esc(p.name)+'</div></div>';
-}
-const col=a=>'<div class="col">'+a.map(seatHTML).join('')+'</div>';
-async function moveSeat(i){
-  if(players.some(p=>p.seat===i))return;
-  try{await updateDoc(doc(db,'rooms',code,'players',me.uid),{seat:i})}catch(e){toast('مشكلة: '+e.code)}
-}
-function render(){
-  if(!room||!code)return;
-  const host=room.host===me.uid;
-  if(room.status==='playing'){A.innerHTML='<main><h1 class="h">🎬</h1><div class="card c"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div></main>';return}
-  A.innerHTML=topbar()+'<main style="justify-content:flex-start"><div class="seats">'+col([0,1,2,3,4])+
-  '<div class="mid"><div class="card c"><p>'+(room.public?'غرفة عشوائية':'كود الغرفة')+'</p><div class="code">'+code+'</div><p>اللاعبين '+players.length+'/'+MAX+'</p></div>'+
-  '<p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
-  (host?'<button class="btn" id="s" '+(players.length<MIN?'disabled':'')+'>ابدأ اللعبة'+(players.length<MIN?' (يحتاج '+MIN+')':'')+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
-  '<button class="btn ghost" id="l">خروج من الغرفة</button></div>'+col([5,6,7,8,9])+'</div></main>';
-  document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
-  if(host)$('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
-  $('l').onclick=leave;
-}
-async function leave(){
-  const c=code,host=room&&room.host===me.uid;
-  stop();
-  try{await deleteDoc(doc(db,'rooms',c,'players',me.uid));if(host)await deleteDoc(doc(db,'rooms',c))}catch(e){}
-  shell();
-}
-
-const ctx={A,esc,toast,th,hdr,nav:navHTML,bindNav,home:()=>shell(),get me(){return me},get prof(){return prof}};
+const ctx={A,esc,toast,th,hdr,topbar,nav:navHTML,bindNav,home:m=>shell(m),get me(){return me},get prof(){return prof}};
 onAuthStateChanged(auth,async u=>{
   me=u;
-  Social=await SOC;
-  if(Social&&!inited){Social.init(ctx);inited=true}
+  Social=await SOC;Rooms=await ROO;
+  if(!inited){if(Social)Social.init(ctx);if(Rooms)Rooms.init(ctx);inited=true}
   if(!u){if(Social)Social.reset();login('');return}
   try{
     const s=await getDoc(doc(db,'users',u.uid));
