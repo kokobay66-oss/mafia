@@ -276,5 +276,9 @@ nav button{background:rgba(28,25,48,.85)}
 <rect class="w" x="355" y="140" width="4" height="6"/><rect class="w" x="375" y="150" width="4" height="6"/>
 </svg>
 <div class="fog"></div>
-</div></body>
+</div><style>
+#bg{background:#120a06 url(bg.jpg) center/cover no-repeat}
+#bg .stars,#bg .moon,#bg svg,#bg .fog{display:none}
+#bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,6,4,.55),rgba(10,6,4,.3) 50%,rgba(10,6,4,.7))}
+</style></body>
 </html>
