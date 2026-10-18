@@ -141,4 +141,22 @@ nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolu
 .dock .rb{padding:6px 10px calc(8px + env(safe-area-inset-bottom))}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:flex-end}
 .sh{background:var(--card);color:var(--tx);width:100%;max-width:480px;margin:0 auto;border-radius:20px 20px 0 0;padding:16px;max-height:70vh;overflow-y:auto}
-.shh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.shh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.meh{position:relative;overflow:hidden;padding:56px 20px 36px;cursor:pointer}
+.mebg{position:absolute;top:-30px;left:-30px;width:calc(100% + 60px);height:calc(100% + 60px);object-fit:cover;filter:blur(28px) saturate(1.3);opacity:.55;z-index:0}
+.meh::after{content:"";position:absolute;left:0;right:0;bottom:0;height:80px;background:linear-gradient(rgba(255,255,255,0),#fff);z-index:1}
+.mer{position:relative;z-index:2;display:flex;align-items:center;gap:16px}
+.mepic{width:110px;height:110px;border-radius:26px;object-fit:cover;flex:none;box-shadow:0 4px 18px #0003}
+.men{flex:1;min-width:0}
+.mnm{font-size:30px;font-weight:800;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lvr{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;font-weight:700}
+.lvb{flex:1;height:8px;border-radius:4px;background:#fff;box-shadow:inset 0 0 0 1px #0002;overflow:hidden}
+.lvb i{display:block;height:100%;background:#ffa24c;border-radius:4px}
+.chv{font-size:34px;color:#444;line-height:1}
+.irs{background:#fff}
+.ir{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #f0f0f4;cursor:pointer}
+.ir .k{font-size:16px}
+.ir .v{color:#8a8aa0;display:flex;align-items:center;gap:8px;font-size:15px}
+.ir .v::after{content:"‹";font-size:22px}
+.ir .v.no::after{content:none}
+.ir .v img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.sg{height:10px;background:#f0f0f4}
