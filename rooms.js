@@ -1,18 +1,18 @@
-
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const db=getFirestore(getApp());
-let X,code=null,room=null,players=[],rchat=[],un=[];
-let cm={mode:'classic',max:10,lock:false};
+let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
+const GM=import('./game.js?'+Date.now()).catch(e=>{console.error(e);return null});
+let cm={mode:'classic',max:10,lock:false,sorc:false};
 const MINSTART=2; // للتجربة، لاحقًا 6
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
 const toast=m=>X.toast(m);
 const tagName=m=>m==='mad'?'دموي':'كلاسيكي';
 const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-export function init(c){X=c}
-export function stopRoom(){un.forEach(f=>f());un=[];code=null;room=null;players=[];rchat=[]}
+export function init(c){X=c;GM.then(g=>{Game=g;if(g)g.init(c)})}
+export function stopRoom(){un.forEach(f=>f());un=[];if(Game)Game.stop();code=null;room=null;players=[];rchat=[]}
 
 /* شاشة المخصص */
 export function custom(msg,needPw,cv){
@@ -20,20 +20,22 @@ export function custom(msg,needPw,cv){
   const M=m=>'<button class="mode '+m+(cm.mode===m?' on':'')+'" data-m="'+m+'">'+tagName(m)+'</button>';
   X.A.innerHTML=X.topbar()+'<main style="justify-content:flex-start">'+
   '<div class="card c"><p>نوع الغرفة</p><div class="two">'+M('classic')+M('mad')+'</div>'+
+  '<div class="lk" id="sw" style="display:'+(cm.mode==='classic'?'block':'none')+'"><label><input type="checkbox" id="sc"'+(cm.sorc?' checked':'')+'> 🧙 تفعيل الساحر</label></div>'+
   '<p>عدد اللاعبين</p><div class="step"><button id="smin">−</button><b id="sval">'+cm.max+'</b><button id="spl">+</button></div>'+
   '<div class="lk"><label><input type="checkbox" id="lk"'+(cm.lock?' checked':'')+'> 🔒 كلمة سر للغرفة</label></div>'+
   '<input id="pw" maxlength="12" placeholder="اكتب كلمة السر" style="display:'+(cm.lock?'block':'none')+'">'+
   '<div class="err" id="ce"></div><button class="btn" id="c">إنشاء الغرفة</button></div>'+
   '<div class="card c"><p>أو ادخل بكود الغرفة</p><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة" value="'+esc(cv||'')+'">'+(needPw?'<input id="jp" maxlength="12" placeholder="كلمة سر الغرفة">':'')+'<button class="btn alt" id="j" style="font-size:16px;padding:14px">انضم</button></div>'+
   '<div class="err">'+esc(msg||'')+'</div><button class="btn ghost" id="bk">رجوع</button></main>';
-  document.querySelectorAll('.mode[data-m]').forEach(b=>b.onclick=()=>{cm.mode=b.dataset.m;document.querySelectorAll('.mode[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
+  document.querySelectorAll('.mode[data-m]').forEach(b=>b.onclick=()=>{cm.mode=b.dataset.m;$('sw').style.display=cm.mode==='classic'?'block':'none';document.querySelectorAll('.mode[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
   $('smin').onclick=()=>{cm.max=Math.max(6,cm.max-1);$('sval').textContent=cm.max};
   $('spl').onclick=()=>{cm.max=Math.min(16,cm.max+1);$('sval').textContent=cm.max};
+  $('sc').onchange=e=>{cm.sorc=e.target.checked};
   $('lk').onchange=e=>{cm.lock=e.target.checked;$('pw').style.display=cm.lock?'block':'none'};
   $('c').onclick=async()=>{
     const pw=cm.lock?$('pw').value.trim():'';
     if(cm.lock&&pw.length<3){$('ce').textContent='كلمة السر 3 أحرف على الأقل';return}
-    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw})}catch(x){$('ce').textContent='مشكلة: '+x.code}
+    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc})}catch(x){$('ce').textContent='مشكلة: '+x.code}
   };
   $('j').onclick=()=>joinRoom($('cd').value.trim(),$('jp')?$('jp').value.trim():'');
   $('bk').onclick=()=>X.home();
@@ -50,7 +52,7 @@ async function seatInfo(c,mx){
 async function newRoom(o){
   let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
   const ph=o.pass?await hash(c+':'+o.pass):null;
-  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,mode:o.mode,max:o.max,ph,createdAt:serverTimestamp()});
+  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,mode:o.mode,max:o.max,sorc:!!o.sorc,ph,createdAt:serverTimestamp()});
   await addMe(c,0);enter(c);
 }
 async function joinRoom(c,pw){
@@ -116,17 +118,18 @@ async function rsend(){
 function render(){
   if(!room||!code)return;
   const host=room.host===X.me.uid,mx=room.max||10,half=Math.ceil(mx/2),mode=room.mode||'classic';
-  if(room.status==='playing'){X.A.innerHTML='<main><h1 class="h">🎬</h1><div class="card c"><p>اللعبة بدأت! (توزيع الأدوار في المرحلة الجاية)</p></div></main>';return}
+  if(room.status==='playing'){if(Game)Game.show(code,room,players,leave);return}
+  if(Game)Game.stop();
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
-  const R=n=>[...Array(n)].map((_,i)=>i);
-  X.A.innerHTML=X.topbar()+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.ph?'<span>🔒</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
+  const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART;
+  X.A.innerHTML=X.topbar()+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.ph?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
   '<main style="justify-content:flex-start;padding-top:8px"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
-  (host?'<button class="btn" id="s" '+(players.length<MINSTART?'disabled':'')+'>ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':'')+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
+  (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
   '<button class="btn ghost" id="l">خروج من الغرفة</button></div>'+col(R(mx-half).map(i=>i+half))+'</div>'+
   '<div class="rc"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb"><input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div></main>';
   document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
-  if(host)$('s').onclick=()=>updateDoc(doc(db,'rooms',code),{status:'playing'});
+  if(host&&can)$('s').onclick=()=>Game?Game.start(code,players,room):toast('تعذر تحميل اللعبة');
   $('l').onclick=leave;
   $('rs').onclick=rsend;
   $('ri').onkeydown=e=>{if(e.key==='Enter')rsend()};
