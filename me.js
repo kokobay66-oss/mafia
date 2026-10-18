@@ -1,0 +1,71 @@
+let X;
+const $=i=>document.getElementById(i);
+const esc=s=>X.esc(s);
+const C=[['DZ','الجزائر'],['SA','السعودية'],['AE','الإمارات'],['KW','الكويت'],['QA','قطر'],['BH','البحرين'],['OM','عُمان'],['IQ','العراق'],['SY','سوريا'],['JO','الأردن'],['LB','لبنان'],['PS','فلسطين'],['EG','مصر'],['SD','السودان'],['LY','ليبيا'],['TN','تونس'],['MA','المغرب'],['MR','موريتانيا'],['YE','اليمن'],['SO','الصومال'],['DJ','جيبوتي'],['KM','جزر القمر'],['TR','تركيا']];
+const flag=c=>String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0)));
+const cname=c=>{const f=C.find(x=>x[0]===c);return f?flag(c)+' '+f[1]:'غير محدد'};
+const gname=g=>g==='m'?'ذكر':g==='f'?'أنثى':'غير محدد';
+const lvl=()=>{const n=X.prof.lv||1,xp=X.prof.xp||0,need=n*100;return {n,xp,need}};
+export function init(c){X=c}
+
+/* تبويب أنا: الجزء العلوي فقط */
+export function screen(){
+  X.th(true);
+  const p=X.prof,l=lvl();
+  X.A.innerHTML='<div class="meh" id="meh"><img class="mebg" src="'+esc(p.photo)+'" alt=""><div class="mer"><img class="mepic" src="'+esc(p.photo)+'" alt=""><div class="men"><div class="mnm">'+esc(p.name)+'</div><div class="lvr"><span>Lv.'+l.n+'</span><div class="lvb"><i style="width:'+Math.min(100,Math.round(l.xp/l.need*100))+'%"></i></div><span>'+l.xp+'/'+l.need+'</span></div></div><span class="chv">‹</span></div></div><div class="list"></div>'+X.nav();
+  X.bindNav();
+  $('meh').onclick=edit;
+}
+
+/* نافذة سفلية للتعديل */
+function sheet(title,html){
+  const o=document.createElement('div');o.className='ov';
+  o.innerHTML='<div class="sh"><div class="shh"><b>'+title+'</b><button class="mini" id="shx">✕</button></div>'+html+'</div>';
+  document.body.appendChild(o);
+  const close=()=>o.remove();
+  o.onclick=e=>{if(e.target===o||e.target.id==='shx')close()};
+  return {o,close};
+}
+const fdate=b=>b?b.replace(/-/g,'/'):'غير محدد';
+
+/* صفحة تعديل المعلومات */
+export function edit(){
+  X.th(true);
+  const p=X.prof,l=lvl();
+  const row=(id,k,v,go)=>'<div class="ir" id="'+id+'"><span class="k">'+k+'</span><span class="v'+(go===false?' no':'')+'">'+v+'</span></div>';
+  X.A.innerHTML=X.hdr('تعديل المعلومات')+'<div class="irs">'+
+    row('r-ph','صورة','<img src="'+esc(p.photo)+'" alt="">')+row('r-nm','الاسم',esc(p.name))+row('r-id','ID المستخدم',esc(p.pid))+
+    '<div class="sg"></div>'+
+    row('r-gd','الجنس',gname(p.gender))+row('r-bd','عيد ميلاد',fdate(p.birth)+' · '+X.age(p.birth)+' سنة')+row('r-rg','منطقة',cname(p.region))+
+    '<div class="sg"></div>'+
+    row('r-lv','المستوى','Lv.'+l.n,false)+row('r-tt','اللقب','لا يوجد',false)+row('r-bg','الشارات','لا يوجد',false)+
+    '</div><div class="pad"><button class="btn ghost" id="lo" style="margin:18px 0;color:#e0475b;border-color:#e0475b">تسجيل خروج</button></div><input type="file" id="phf" accept="image/*" hidden>';
+  const save=async(patch,close)=>{try{await X.update(patch);if(close)close();edit()}catch(x){X.toast('مشكلة: '+x.code)}};
+  $('bk').onclick=screen;
+  $('lo').onclick=()=>X.logout();
+  $('r-id').onclick=()=>{try{navigator.clipboard.writeText(p.pid);X.toast('تم نسخ الـ ID')}catch(e){}};
+  $('r-ph').onclick=()=>$('phf').click();
+  $('phf').onchange=async e=>{const f=e.target.files[0];if(f)save({photo:await X.readImg(f)})};
+  $('r-nm').onclick=()=>{
+    const s=sheet('الاسم','<input id="sn" maxlength="14" value="'+esc(p.name)+'"><div class="err" id="se"></div><button class="btn" id="ss">حفظ</button>');
+    $('ss').onclick=()=>{const n=$('sn').value.trim();if(n.length<2){$('se').textContent='الاسم قصير';return}save({name:n},s.close)};
+  };
+  $('r-gd').onclick=()=>{
+    const s=sheet('الجنس','<button class="btn alt" data-g="m">ذكر</button><button class="btn alt" data-g="f">أنثى</button>');
+    s.o.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>save({gender:b.dataset.g},s.close));
+  };
+  $('r-bd').onclick=()=>{
+    const s=sheet('عيد الميلاد',X.picker.html()+'<div class="err" id="se"></div><button class="btn" id="ss">حفظ</button>');
+    X.picker.set(p.birth);X.picker.bind();
+    $('ss').onclick=()=>{
+      const b=X.picker.get(),[y,m,d]=b.split('-').map(Number);
+      if(new Date(y,m-1,d).getMonth()!==m-1){$('se').textContent='تاريخ غير صحيح';return}
+      if(X.age(b)<13){$('se').textContent='اللعبة للعمر 13 سنة وفوق';return}
+      save({birth:b},s.close);
+    };
+  };
+  $('r-rg').onclick=()=>{
+    const s=sheet('المنطقة',C.map(c=>'<div class="fr" data-c="'+c[0]+'"><span class="fi">'+flag(c[0])+' '+c[1]+'</span></div>').join(''));
+    s.o.querySelectorAll('[data-c]').forEach(r=>r.onclick=()=>save({region:r.dataset.c},s.close));
+  };
+}
