@@ -35,10 +35,11 @@ const GSVG='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71
 let me,prof,unsubs=[],tab='play',draft={},Social=null,Rooms=null,Me=null,inited=false;
 const stop=()=>{unsubs.forEach(f=>f());unsubs=[];if(Social)Social.stopChat();if(Rooms)Rooms.stopRoom()};
 const th=l=>{document.body.classList.toggle('light',l);A.classList.remove('fix')};
+A.addEventListener('click',e=>{if(e.target.id==='tav'&&Me)Me.view()});
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
 const age=b=>{const [y,m,d]=b.split('-').map(Number),n=new Date();let a=n.getFullYear()-y;if(n<new Date(n.getFullYear(),m-1,d))a--;return a};
 const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const s=Math.min(i.width,i.height);c.getContext('2d').drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,128,128);r(c.toDataURL('image/jpeg',.8))};i.src=URL.createObjectURL(f)});
-const topbar=x=>'<div class="top"><div class="pc"><img class="av" src="'+esc(prof.photo)+'"><div><div class="pn">'+esc(prof.name)+'</div><div class="pi">ID: '+prof.pid+'</div></div></div>'+(x||'')+'</div>';
+const topbar=x=>'<div class="top"><div class="tl"><img class="av tav" id="tav" src="'+esc(prof.photo)+'" alt=""><div class="coin">🪙 0</div></div>'+(x||'')+'</div>';
 const hdr=t=>'<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">'+t+'</h1><span style="width:44px"></span></div>';
 
 function login(msg){
