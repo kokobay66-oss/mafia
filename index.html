@@ -37,7 +37,7 @@ const th=l=>{document.body.classList.toggle('light',l);A.classList.remove('fix')
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
 const age=b=>{const [y,m,d]=b.split('-').map(Number),n=new Date();let a=n.getFullYear()-y;if(n<new Date(n.getFullYear(),m-1,d))a--;return a};
 const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const s=Math.min(i.width,i.height);c.getContext('2d').drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,128,128);r(c.toDataURL('image/jpeg',.8))};i.src=URL.createObjectURL(f)});
-const topbar=()=>'<div class="top"><div class="pc"><img class="av" src="'+esc(prof.photo)+'"><div><div class="pn">'+esc(prof.name)+'</div><div class="pi">ID: '+prof.pid+'</div></div></div><div class="logo">🎭 مجلس المافيا</div></div>';
+const topbar=x=>'<div class="top"><div class="pc"><img class="av" src="'+esc(prof.photo)+'"><div><div class="pn">'+esc(prof.name)+'</div><div class="pi">ID: '+prof.pid+'</div></div></div>'+(x||'')+'</div>';
 const hdr=t=>'<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">'+t+'</h1><span style="width:44px"></span></div>';
 
 function login(msg){
@@ -112,7 +112,7 @@ function setup(){
 }
 
 /* القوائم الرئيسية */
-const navHTML=()=>'<nav>'+[['play','🎮','اللعب'],['msg','💬','الرسائل'],['me','👤','أنا']].map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'&&Social?Social.badgeN():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
+const navHTML=()=>'<nav style="gap:8px">'+[['play','🎮','اللعب'],['store','🛒','المتجر'],['msg','💬','الرسائل'],['mom','✨','اللحظات'],['me','👤','أنا']].map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'&&Social?Social.badgeN():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
 const bindNav=()=>document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;if(tab==='me')draft={...prof};shell()});
 function shell(msg){
   stop();th(tab!=='play');
@@ -121,10 +121,15 @@ function shell(msg){
     A.innerHTML='<main><div class="empty">تعذر تحميل الرسائل<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
     bindNav();return;
   }
+  if(tab==='store'||tab==='mom'){
+    const t=tab==='store'?['🛒','المتجر']:['✨','اللحظات'];
+    A.innerHTML='<div class="mh"><h1>'+t[1]+'</h1></div><div class="list"><div class="empty"><div style="font-size:56px">'+t[0]+'</div>'+t[1]+' قريبًا</div></div>'+navHTML();
+    bindNav();return;
+  }
   let b='';
   if(tab==='play')b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
   else b='<h2 class="h">أنا</h2>'+formHTML(true)+'<button class="btn alt" id="lo" style="font-size:15px;padding:12px">تسجيل خروج</button>';
-  A.innerHTML=topbar()+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
+  A.innerHTML=(tab==='play'?topbar('<div class="logo">🎭 مجلس المافيا</div>'):topbar())+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
   bindNav();
   if(tab==='play'){
     const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
@@ -135,7 +140,9 @@ function shell(msg){
   }
   else{bindForm(true);$('lo').onclick=()=>signOut(auth)}
 }
-const ctx={A,esc,toast,th,hdr,topbar,nav:navHTML,bindNav,home:m=>shell(m),get me(){return me},get prof(){return prof}};
+const ctx={A,esc,toast,th,hdr,topbar,nav:navHTML,bindNav,home:m=>shell(m),get me(){return me},get prof(){return prof},
+  invite:(c,r,ids)=>Social?Social.inviteModal(c,r,ids):toast('تعذر تحميل الدعوات'),
+  joinInvite:(c,ph)=>{if(Social)Social.stopChat();Rooms?Rooms.joinByInvite(c,ph):toast('تعذر تحميل الغرف')}};
 onAuthStateChanged(auth,async u=>{
   me=u;
   Social=await SOC;Rooms=await ROO;
