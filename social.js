@@ -131,7 +131,6 @@ async function profileScreen(u,back){
 }
 
 /* الشات */
-const EM=['😀','😂','🤣','😍','😎','🥺','😭','😡','👍','👏','🙏','🔥','❤️','💔','😈','🔪','💉','🎭','🤫','🤔','🥳','😅','😴','🤝'];
 async function openChat(k,id){
   stopChat();view='chat';X.th(true);X.A.classList.add('fix');
   const me=uid();
@@ -144,11 +143,9 @@ async function openChat(k,id){
   }
   const back=()=>openChat(k,id);
   X.A.innerHTML='<div class="ch"><button class="ib" id="bk">➜</button><div class="nm">'+(gid?'<div class="gav">👥</div>':'<img src="'+esc(photo)+'" alt="">')+'<span class="tt">'+esc(title)+'</span></div><button class="ib" id="dt">•••</button></div>'+
-    '<div class="chat"><div class="ms" id="ms"></div><div class="ep" id="ep" hidden>'+EM.map(e=>'<span>'+e+'</span>').join('')+'</div><div class="bar"><button id="eb">😊</button><input id="mi" maxlength="500" placeholder="اكتب رسالة..."><button id="sd">➤</button></div></div>';
+    '<div class="chat"><div class="ms" id="ms"></div><div class="bar"><input id="mi" maxlength="500" placeholder="اكتب رسالة..."><button id="sd">➤</button></div></div>';
   $('bk').onclick=()=>X.home();
   $('dt').onclick=()=>k==='f'?profileScreen(id,back):groupInfo(id);
-  $('eb').onclick=()=>{$('ep').hidden=!$('ep').hidden};
-  $('ep').onclick=e=>{if(e.target.tagName==='SPAN'){$('mi').value+=e.target.textContent;$('mi').focus()}};
   const send=async()=>{
     const t=$('mi').value.trim();if(!t)return;
     $('mi').value='';
@@ -180,10 +177,11 @@ async function openChat(k,id){
       const t=tm(m.at),mine=m.from===me;
       if(t-prev>600000)h+='<div class="dt">'+full(t)+'</div>';
       prev=t;
-      h+='<div class="row'+(mine?'':' them')+'"><img class="av" data-u="'+m.from+'" src="'+esc(mine?X.prof.photo:U[m.from].photo)+'" alt=""><div class="bx">'+(gid&&!mine?'<div class="sdn">'+esc(U[m.from].name)+'</div>':'')+'<div class="bub">'+esc(m.text)+'</div></div></div>';
+      h+='<div class="row'+(mine?'':' them')+'"><img class="av" data-u="'+m.from+'" src="'+esc(mine?X.prof.photo:U[m.from].photo)+'" alt=""><div class="bx">'+(gid&&!mine?'<div class="sdn">'+esc(U[m.from].name)+'</div>':'')+'<div class="bub">'+esc(m.text)+(m.inv&&!mine?'<div><button class="mini ok" data-inv="'+esc(m.inv.c)+'" data-ph="'+esc(m.inv.ph)+'" style="margin:6px 0 0">انضمام</button></div>':'')+'</div></div></div>';
     });
     el.innerHTML=h;el.scrollTop=el.scrollHeight;
     el.querySelectorAll('img[data-u]').forEach(i=>i.onclick=()=>profileScreen(i.dataset.u,back));
+    el.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>X.joinInvite(b.dataset.inv,b.dataset.ph));
     if(curRead)curRead();
   }));
 }
@@ -232,4 +230,26 @@ function groupSearch(){
       });
     }catch(x){el.innerHTML='<p class="err">مشكلة: '+esc(x.code)+'</p>'}
   };
-    }
+}
+
+/* دعوة الأصدقاء للغرفة */
+async function sendInvite(id,code){
+  const me=uid(),cid=[me,id].sort().join('_'),t='🎮 دعوة للانضمام لغرفة '+code;
+  await addDoc(collection(db,'chats',cid,'msgs'),{from:me,text:t,inv:{c:code,ph:inviteRoomPh},at:serverTimestamp()});
+  await setDoc(doc(db,'chats',cid),{members:[me,id],last:t,lastAt:serverTimestamp(),lastFrom:me,unread:{[id]:increment(1)}},{merge:true});
+}
+let inviteRoomPh='';
+export async function inviteModal(code,room,inRoom){
+  const fr=friends.filter(f=>f.status==='friends');
+  await Promise.all(fr.map(f=>getU(f.id)));
+  inviteRoomPh=room.ph||'';
+  const o=document.createElement('div');o.className='ov';
+  o.innerHTML='<div class="sh"><div class="shh"><b>ادعُ أصدقاءك</b><button class="mini" id="ovx">✕</button></div>'+
+    (fr.length?fr.map(f=>{const u=U[f.id],ins=inRoom.includes(f.id);return '<div class="fr"><img class="av" src="'+esc(u.photo)+'" alt=""><div class="fi"><div class="pn">'+esc(u.name)+'</div><div class="pi">ID: '+esc(u.pid)+'</div></div><button class="mini'+(ins?'':' ok')+'" data-i="'+f.id+'"'+(ins?' disabled':'')+'>'+(ins?'داخل الغرفة':'دعوة')+'</button></div>'}).join(''):'<p class="c">ما عندك أصدقاء بعد. أضفهم من تبويب الرسائل.</p>')+'</div>';
+  document.body.appendChild(o);
+  o.onclick=e=>{if(e.target===o||e.target.id==='ovx')o.remove()};
+  o.querySelectorAll('[data-i]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{await sendInvite(b.dataset.i,code);b.textContent='تمت الدعوة ✅';b.classList.remove('ok')}catch(x){b.disabled=false;toast('مشكلة: '+x.code)}
+  });
+}
