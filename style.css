@@ -159,4 +159,9 @@ nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolu
 .ir .v::after{content:"‹";font-size:22px}
 .ir .v.no::after{content:none}
 .ir .v img{width:44px;height:44px;border-radius:50%;object-fit:cover}
-.sg{height:10px;background:#f0f0f4}
+.sg{height:10px;background:#f0f0f4}.tl{display:flex;align-items:center;gap:10px}
+.tav{width:38px;height:38px;cursor:pointer}
+.coin{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px dashed var(--bd);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:700;color:inherit}
+.pvo{align-items:stretch;z-index:60}
+.pvs{background:#fff;color:#1d1a2b;width:100%;max-width:480px;margin:0 auto;overflow-y:auto}
+.pvx{position:absolute;top:14px;right:14px;z-index:3;background:rgba(255,255,255,.7);border:0;color:#222}
