@@ -27,11 +27,12 @@ const app=initializeApp({
 const auth=getAuth(app),db=getFirestore(app);
 const SOC=import('./social.js?'+Date.now()).catch(e=>{console.error(e);return null});
 const ROO=import('./rooms.js?'+Date.now()).catch(e=>{console.error(e);return null});
+const MEM=import('./me.js?'+Date.now()).catch(e=>{console.error(e);return null});
 const $=i=>document.getElementById(i),A=$('app');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const GSVG='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
-let me,prof,unsubs=[],tab='play',draft={},Social=null,Rooms=null,inited=false;
+let me,prof,unsubs=[],tab='play',draft={},Social=null,Rooms=null,Me=null,inited=false;
 const stop=()=>{unsubs.forEach(f=>f());unsubs=[];if(Social)Social.stopChat();if(Rooms)Rooms.stopRoom()};
 const th=l=>{document.body.classList.toggle('light',l);A.classList.remove('fix')};
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
@@ -81,7 +82,8 @@ function bindForm(edit){
   bindWheels();
   $('sv').onclick=()=>saveProfile(edit);
 }
-const pubProf=()=>setDoc(doc(db,'profiles',me.uid),{name:prof.name,photo:prof.photo,pid:prof.pid});
+const pubProf=()=>setDoc(doc(db,'profiles',me.uid),{name:prof.name,photo:prof.photo,pid:prof.pid,gender:prof.gender||'',region:prof.region||''});
+async function updateProf(p){await updateDoc(doc(db,'users',me.uid),p);prof={...prof,...p};await pubProf()}
 async function saveProfile(edit){
   const n=draft.name.trim(),e=m=>$('e').textContent=m;
   if(n.length<2){e('الاسم قصير');return}
@@ -113,7 +115,7 @@ function setup(){
 
 /* القوائم الرئيسية */
 const navHTML=()=>'<nav style="gap:8px">'+[['play','🎮','اللعب'],['store','🛒','المتجر'],['msg','💬','الرسائل'],['mom','✨','اللحظات'],['me','👤','أنا']].map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'&&Social?Social.badgeN():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
-const bindNav=()=>document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;if(tab==='me')draft={...prof};shell()});
+const bindNav=()=>document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;shell()});
 function shell(msg){
   stop();th(tab!=='play');
   if(tab==='msg'){
@@ -121,32 +123,34 @@ function shell(msg){
     A.innerHTML='<main><div class="empty">تعذر تحميل الرسائل<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
     bindNav();return;
   }
+  if(tab==='me'){
+    if(Me){Me.screen();return}
+    A.innerHTML='<main><div class="empty">تعذر تحميل الصفحة<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
+    bindNav();return;
+  }
   if(tab==='store'||tab==='mom'){
     const t=tab==='store'?['🛒','المتجر']:['✨','اللحظات'];
     A.innerHTML='<div class="mh"><h1>'+t[1]+'</h1></div><div class="list"><div class="empty"><div style="font-size:56px">'+t[0]+'</div>'+t[1]+' قريبًا</div></div>'+navHTML();
     bindNav();return;
   }
-  let b='';
-  if(tab==='play')b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
-  else b='<h2 class="h">أنا</h2>'+formHTML(true)+'<button class="btn alt" id="lo" style="font-size:15px;padding:12px">تسجيل خروج</button>';
-  A.innerHTML=(tab==='play'?topbar('<div class="logo">🎭 مجلس المافيا</div>'):topbar())+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
+  const b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
+  A.innerHTML=topbar('<div class="logo">🎭 مجلس المافيا</div>')+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
   bindNav();
-  if(tab==='play'){
-    const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
-    $('rc').onclick=R(()=>Rooms.quick('classic'));
-    $('rm2').onclick=R(()=>Rooms.quick('mad'));
-    $('cus').onclick=R(()=>Rooms.custom());
-    $('off').onclick=()=>toast('الأوف لاين قريبًا');
-  }
-  else{bindForm(true);$('lo').onclick=()=>signOut(auth)}
+  const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
+  $('rc').onclick=R(()=>Rooms.quick('classic'));
+  $('rm2').onclick=R(()=>Rooms.quick('mad'));
+  $('cus').onclick=R(()=>Rooms.custom());
+  $('off').onclick=()=>toast('الأوف لاين قريبًا');
 }
 const ctx={A,esc,toast,th,hdr,topbar,nav:navHTML,bindNav,home:m=>shell(m),get me(){return me},get prof(){return prof},
   invite:(c,r,ids)=>Social?Social.inviteModal(c,r,ids):toast('تعذر تحميل الدعوات'),
-  joinInvite:(c,ph)=>{if(Social)Social.stopChat();Rooms?Rooms.joinByInvite(c,ph):toast('تعذر تحميل الغرف')}};
+  joinInvite:(c,ph)=>{if(Social)Social.stopChat();Rooms?Rooms.joinByInvite(c,ph):toast('تعذر تحميل الغرف')},
+  update:updateProf,readImg,age,logout:()=>signOut(auth),
+  picker:{html:wheelsHTML,bind:bindWheels,get:()=>draft.birth,set:b=>{draft.birth=b}}};
 onAuthStateChanged(auth,async u=>{
   me=u;
-  Social=await SOC;Rooms=await ROO;
-  if(!inited){if(Social)Social.init(ctx);if(Rooms)Rooms.init(ctx);inited=true}
+  Social=await SOC;Rooms=await ROO;Me=await MEM;
+  if(!inited){if(Social)Social.init(ctx);if(Rooms)Rooms.init(ctx);if(Me)Me.init(ctx);inited=true}
   if(!u){if(Social)Social.reset();login('');return}
   try{
     const s=await getDoc(doc(db,'users',u.uid));
