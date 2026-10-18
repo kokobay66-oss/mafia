@@ -71,6 +71,20 @@ async function joinRoom(c,pw){
     await addMe(c,si.seat);enter(c);
   }catch(x){custom('مشكلة: '+x.code)}
 }
+export async function joinByInvite(c,ph){
+  try{
+    const s=await getDoc(doc(db,'rooms',c));
+    if(!s.exists()){toast('الغرفة ما عادت موجودة');return}
+    const rm=s.data();
+    const mine=await getDoc(doc(db,'rooms',c,'players',X.me.uid));
+    if(mine.exists()&&rm.status==='lobby'){enter(c);return}
+    if(rm.status!=='lobby'){toast('اللعبة بدأت');return}
+    if(rm.ph&&rm.ph!==ph){toast('الغرفة محمية بكلمة سر');return}
+    const si=await seatInfo(c,rm.max||10);
+    if(si.seat<0){toast('الغرفة ممتلئة');return}
+    await addMe(c,si.seat);enter(c);
+  }catch(x){toast('مشكلة: '+x.code)}
+}
 export async function quick(mode){
   const e=$('e2');if(e)e.textContent='ندوّر لك على غرفة...';
   try{
@@ -118,19 +132,21 @@ async function rsend(){
 function render(){
   if(!room||!code)return;
   const host=room.host===X.me.uid,mx=room.max||10,half=Math.ceil(mx/2),mode=room.mode||'classic';
-  if(room.status==='playing'){if(Game)Game.show(code,room,players,leave);return}
+  if(room.status==='playing'){X.A.classList.remove('fix');if(Game)Game.show(code,room,players,leave);return}
   if(Game)Game.stop();
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
   const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART;
-  X.A.innerHTML=X.topbar()+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.ph?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
-  '<main style="justify-content:flex-start;padding-top:8px"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
+  X.A.classList.add('fix');
+  X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.ph?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
+  '<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
   (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
-  '<button class="btn ghost" id="l">خروج من الغرفة</button></div>'+col(R(mx-half).map(i=>i+half))+'</div>'+
-  '<div class="rc"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb"><input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div></main>';
+  '<button class="btn alt" id="iv" style="font-size:15px;padding:12px">📨 دعوة</button></div>'+col(R(mx-half).map(i=>i+half))+'</div></div>'+
+  '<div class="rc dock"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb"><input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div>';
   document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
   if(host&&can)$('s').onclick=()=>Game?Game.start(code,players,room):toast('تعذر تحميل اللعبة');
   $('l').onclick=leave;
+  $('iv').onclick=()=>X.invite(code,room,players.map(p=>p.id));
   $('rs').onclick=rsend;
   $('ri').onkeydown=e=>{if(e.key==='Enter')rsend()};
   $('ri').value=keep;if(foc)$('ri').focus();
