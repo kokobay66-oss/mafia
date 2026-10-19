@@ -41,6 +41,17 @@ export function custom(msg,needPw,cv){
   $('bk').onclick=()=>X.home();
 }
 
+/* تأكيد الخروج */
+function ask(msg,yes){
+  const o=document.createElement('div');o.className='ov dlg';
+  o.innerHTML='<div class="dg"><p>'+esc(msg)+'</p><div class="two"><button class="btn alt" id="dn">إلغاء</button><button class="btn" id="dy">تأكيد</button></div></div>';
+  document.body.appendChild(o);
+  $('dn').onclick=()=>o.remove();
+  $('dy').onclick=()=>{o.remove();yes()};
+  o.onclick=e=>{if(e.target===o)o.remove()};
+}
+const askLeave=()=>ask(room&&room.host===X.me.uid?'أنت المضيف، لو طلعت بتنقفل الغرفة للجميع. تبي تطلع؟':'تبي تطلع من الغرفة؟',leave);
+
 /* الغرف والمقاعد */
 const addMe=(c,seat)=>setDoc(doc(db,'rooms',c,'players',X.me.uid),{name:X.prof.name,photo:X.prof.photo,seat,joinedAt:serverTimestamp()});
 async function seatInfo(c,mx){
@@ -132,7 +143,7 @@ async function rsend(){
 function render(){
   if(!room||!code)return;
   const host=room.host===X.me.uid,mx=room.max||10,half=Math.ceil(mx/2),mode=room.mode||'classic';
-  if(room.status==='playing'){X.A.classList.remove('fix');if(Game)Game.show(code,room,players,leave);return}
+  if(room.status==='playing'){X.A.classList.remove('fix');if(Game)Game.show(code,room,players,askLeave);return}
   if(Game)Game.stop();
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
   const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART;
@@ -145,7 +156,7 @@ function render(){
   '<div class="rc dock"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb"><input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div>';
   document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
   if(host&&can)$('s').onclick=()=>Game?Game.start(code,players,room):toast('تعذر تحميل اللعبة');
-  $('l').onclick=leave;
+  $('l').onclick=askLeave;
   $('iv').onclick=()=>X.invite(code,room,players.map(p=>p.id));
   $('rs').onclick=rsend;
   $('ri').onkeydown=e=>{if(e.key==='Enter')rsend()};
