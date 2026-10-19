@@ -187,8 +187,8 @@ function draw(){
   const vs=(ph==='vote'||ph==='vres')?votes.filter(v=>v.g===room.g&&v.r===room.rd):[];
   const R0=n=>[...Array(n)].map((_,i)=>i),col=a=>'<div class="col">'+a.map(i=>seatG(i,by,vs)).join('')+'</div>';
   const rl=R[myRole&&myRole.role]||['...','⏳'];
-  X.A.innerHTML=X.topbar()+'<div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+'</div>'+
-    '<main style="justify-content:flex-start;padding-top:4px"><div class="rolechip">دورك: '+rl[1]+' '+rl[0]+(al(me)?'':' · 👻 مشاهد')+'</div><div class="seats" style="min-height:'+(half*68)+'px">'+col(R0(half))+'<div class="mid">'+middle()+'</div>'+col(R0(mx-half).map(i=>i+half))+'</div><button class="btn ghost" id="gl">خروج</button></main>';
+  X.A.innerHTML=X.topbar('<button class="lv" id="gl">خروج ✕</button>')+'<div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+'</div>'+
+    '<main style="justify-content:flex-start;padding-top:4px"><div class="rolechip">دورك: '+rl[1]+' '+rl[0]+(al(me)?'':' · 👻 مشاهد')+'</div><div class="seats" style="min-height:'+(half*68)+'px">'+col(R0(half))+'<div class="mid">'+middle()+'</div>'+col(R0(mx-half).map(i=>i+half))+'</div></main>';
   document.querySelectorAll('.seat[data-u]').forEach(s=>s.onclick=()=>pick(s.dataset.u));
   const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
   b('sk',()=>{sx='kill';sdone='';draw()});
@@ -197,4 +197,4 @@ function draw(){
   b('sp',()=>put('acts',{k:'s'}));
   b('nw',()=>updateDoc(doc(db,'rooms',C),{status:'lobby',ph:null}));
   b('gl',()=>leaveFn&&leaveFn());
-  }
+}
