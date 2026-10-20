@@ -32,7 +32,7 @@ const fdate=b=>b?b.replace(/-/g,'/'):'غير محدد';
 export function edit(){
   X.th(true);
   const p=X.prof,l=lvl();
-  const row=(id,k,v,go)=>'<div class="ir" id="'+id+'"><span class="k">'+k+'</span><span class="v'+(go===false?' no':'')+'">'+v+'</span></div>';
+  const row=(id,k,v,go)=>'<div class="ir" id="'+id+'"><span class="k">'+k+'</span><span class="v'+(go===false?' nc':'')+'">'+v+'</span></div>';
   X.A.innerHTML=X.hdr('تعديل المعلومات')+'<div class="irs">'+
     row('r-ph','صورة','<img src="'+esc(p.photo)+'" alt="">')+row('r-nm','الاسم',esc(p.name))+row('r-id','ID المستخدم',esc(p.pid))+
     '<div class="sg"></div>'+
@@ -73,7 +73,7 @@ export function edit(){
 /* ملفي كما يراه الآخرون */
 export function view(){
   const p=X.prof,l=lvl();
-  const row=(k,v)=>'<div class="ir"><span class="k">'+k+'</span><span class="v no">'+v+'</span></div>';
+  const row=(k,v)=>'<div class="ir"><span class="k">'+k+'</span><span class="v nc">'+v+'</span></div>';
   const o=document.createElement('div');o.className='ov pvo';
   o.innerHTML='<div class="pvs"><div class="meh" style="cursor:default"><img class="mebg" src="'+esc(p.photo)+'" alt=""><button class="ib pvx" id="pvx">➜</button><div class="mer"><img class="mepic" src="'+esc(p.photo)+'" alt=""><div class="men"><div class="mnm">'+esc(p.name)+'</div><div class="lvr"><span>Lv.'+l.n+'</span><div class="lvb"><i style="width:'+Math.min(100,Math.round(l.xp/l.need*100))+'%"></i></div></div></div></div></div><div class="irs">'+row('ID',esc(p.pid))+row('الجنس',gname(p.gender))+row('المنطقة',cname(p.region))+row('المستوى','Lv.'+l.n)+'</div><p class="c" style="font-size:12px;color:#8a8aa0">هكذا يراك اللاعبون</p></div>';
   document.body.appendChild(o);
@@ -83,7 +83,7 @@ export function view(){
 /* العملات */
 const ico=n=>'<i class="ic ic-'+n+'"></i>';
 const num=n=>Number(n||0).toLocaleString('en');
-export function coin(){X.toast('عملة المافيا تكسبها من اللعب (قريبًا)')}
+export function coin(){X.toast('عملة المحقق تكسبها من اللعب (قريبًا)')}
 export function charge(){
-  sheet('شحن عملة المحقق','<p class="c" style="display:flex;justify-content:center;align-items:center;gap:6px">رصيدك: '+ico('gem')+'<b>'+num(X.prof.gems)+'</b></p><div class="pks">'+[60,300,680,1500].map(n=>'<div class="pk">'+ico('gem')+'<b>'+n+'</b><button class="mini" disabled>قريبًا</button></div>').join('')+'</div><p class="c" style="font-size:12px">الشحن بالدفع الحقيقي يتفعّل لما نربط نظام الدفع.</p>');
+  sheet('شحن عملة المافيا','<p class="c" style="display:flex;justify-content:center;align-items:center;gap:6px">رصيدك: '+ico('mafia')+'<b>'+num(X.prof.gems)+'</b></p><div class="pks">'+[60,300,680,1500].map(n=>'<div class="pk">'+ico('mafia')+'<b>'+n+'</b><button class="mini" disabled>قريبًا</button></div>').join('')+'</div><p class="c" style="font-size:12px">الشحن بالدفع الحقيقي يتفعّل لما نربط نظام الدفع.</p>');
 }
