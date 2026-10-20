@@ -50,7 +50,7 @@ function ask(msg,yes){
   $('dy').onclick=()=>{o.remove();yes()};
   o.onclick=e=>{if(e.target===o)o.remove()};
 }
-const askLeave=()=>ask(room&&room.host===X.me.uid?'أنت المضيف، لو طلعت بتنقفل الغرفة للجميع. تبي تطلع؟':'تبي تطلع من الغرفة؟',leave);
+const askLeave=()=>ask(room&&room.host===X.me.uid&&!room.public?'أنت المضيف، لو طلعت بتنقفل الغرفة للجميع. تبي تطلع؟':'تبي تطلع من الغرفة؟',leave);
 
 /* الغرف والمقاعد */
 const addMe=(c,seat)=>setDoc(doc(db,'rooms',c,'players',X.me.uid),{name:X.prof.name,photo:X.prof.photo,seat,joinedAt:serverTimestamp()});
@@ -164,8 +164,19 @@ function render(){
   const m=$('rm');m.scrollTop=m.scrollHeight;
 }
 async function leave(){
-  const c=code,host=room&&room.host===X.me.uid;
+  const c=code,me=X.me.uid,host=room&&room.host===me,pub=room&&room.public,st=room&&room.status;
+  const next=players.find(p=>p.id!==me);
   stopRoom();
-  try{await deleteDoc(doc(db,'rooms',c,'players',X.me.uid));if(host)await deleteDoc(doc(db,'rooms',c))}catch(e){}
+  try{
+    if(host&&pub&&next){
+      const up={host:next.id};
+      if(st==='playing'){up.status='lobby';up.ph=null}
+      await updateDoc(doc(db,'rooms',c),up);
+      await deleteDoc(doc(db,'rooms',c,'players',me));
+    }else{
+      await deleteDoc(doc(db,'rooms',c,'players',me));
+      if(host)await deleteDoc(doc(db,'rooms',c));
+    }
+  }catch(e){}
   X.home();
 }
