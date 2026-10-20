@@ -3,7 +3,7 @@ import {getFirestore,doc,setDoc,updateDoc,collection,onSnapshot,serverTimestamp}
 
 const db=getFirestore(getApp());
 const R={mafia:['مافيا','🔪'],doctor:['الطبيب','💉'],detective:['المحقق','🕵️'],sorcerer:['الساحر','🧙'],citizen:['مواطن','🙂']};
-const T={reveal:5,night:15,dawn:5,talk:40,disc:30,vote:20,vres:6};
+const T={reveal:5,night:15,dawn:5,talk:40,disc:30,vote:15,vres:6};
 const PH={reveal:'كشف الأدوار',night:'الليل',dawn:'الفجر',talk:'وقت الكلام',disc:'النقاش المفتوح',vote:'التصويت',vres:'نتيجة التصويت',end:'النهاية'};
 const PR={mafia:'🔪 اضغط على اللاعب اللي تبون تقتلونه',doctor:'💉 اضغط على اللاعب اللي تبي تحميه',detective:'🕵️ اضغط على اللاعب اللي تشك فيه'};
 let X,C=null,room=null,players=[],me='',un=[],timer=null,iv=null,endAt=0,lastPt=-1,leaveFn=null;
@@ -93,10 +93,13 @@ function hostSkip(){
   if(acts.some(a=>a.id===u&&a.k==='s'&&a.g===H.G&&a.r===H.rd)){H.skipPt=H.pt;clearTimeout(timer);nextSpeaker().catch(()=>{})}
 }
 async function tally(){
-  const vs=votes.filter(v=>v.g===H.G&&v.r===H.rd&&H.alive.includes(v.id)&&H.alive.includes(v.t));
-  const c={};vs.forEach(v=>c[v.t]=(c[v.t]||0)+1);
+  const vs=votes.filter(v=>v.g===H.G&&v.r===H.rd&&H.alive.includes(v.id));
+  const c={};let skip=H.alive.length;
+  vs.forEach(v=>{
+    if(v.t!=='skip'&&v.t!==v.id&&H.alive.includes(v.t)){c[v.t]=(c[v.t]||0)+1;skip--}
+  });
   const m=Math.max(0,...Object.values(c)),top=Object.keys(c).filter(k=>c[k]===m);
-  const out=top.length===1&&m>0?top[0]:null;
+  const out=top.length===1&&m>skip?top[0]:null;
   if(out)H.alive=H.alive.filter(u=>u!==out);
   const vout=out?{u:out,role:H.roles[out]}:null,w=win();
   if(w)return finish(w,{vout});
@@ -171,10 +174,13 @@ function middle(){
   }
   if(ph==='talk')return '<div class="gcard"><p>🎙️ دور</p><h2>رقم '+no(room.spk)+' '+nm(room.spk)+'</h2>'+(room.spk===me?'<button class="btn alt" id="sp">إنهاء دوري</button>':'')+'</div>'+res();
   if(ph==='disc')return '<div class="gcard"><div class="em">💬</div><p>نقاش مفتوح للجميع</p></div>'+res();
-  if(ph==='vote')return '<div class="gcard"><p>🗳️ صوّتوا على اللي تشكون فيه</p>'+(iAlive?'<p>اضغط على اللاعب</p>':'<p>👻 المشاهد ما يصوّت</p>')+'</div>'+res();
+  if(ph==='vote'){
+    const vk=votes.filter(v=>v.g===room.g&&v.r===room.rd),mine=vk.find(v=>v.id===me),sk=vk.filter(v=>v.t==='skip').length;
+    return '<div class="gcard"><p>🗳️ صوّتوا على اللي تشكون فيه</p>'+(iAlive?'<p>اضغط على اللاعب أو تخطي. اللي ما يصوّت يُحسب تخطي</p><button class="btn'+(mine&&mine.t==='skip'?'':' alt')+'" id="vk">⏭️ تخطي ('+sk+')</button>':'<p>👻 المشاهد ما يصوّت</p>')+'</div>'+res();
+  }
   if(ph==='vres'){
     const o=room.vout;
-    return '<div class="gcard"><div class="em">'+(o?R[o.role][1]:'⚖️')+'</div><h2>'+(o?'تم إقصاء رقم '+no(o.u):'تعادل، ما أحد انطرد')+'</h2><p>'+(o?nm(o.u)+' · كان '+R[o.role][0]:'')+'</p></div>';
+    return '<div class="gcard"><div class="em">'+(o?R[o.role][1]:'⚖️')+'</div><h2>'+(o?'تم إقصاء رقم '+no(o.u):'ما انطرد أحد')+'</h2><p>'+(o?nm(o.u)+' · كان '+R[o.role][0]:'')+'</p></div>';
   }
   const f=room.fin||{},mw=room.win==='mafia';
   return '<div class="gcard"><div class="em">'+(mw?'🔪':'🎉')+'</div><h2>'+(mw?'فازت المافيا':'فاز المواطنون')+'</h2></div><div class="gcard">'+Object.keys(f).map(u=>'<p style="color:#fff;margin:2px 0">'+R[f[u]][1]+' رقم '+no(u)+' '+nm(u)+' · '+R[f[u]][0]+(al(u)?'':' 💀')+'</p>').join('')+'</div>'+(room.host===me?'<button class="btn" id="nw">لعبة جديدة</button>':'');
@@ -195,6 +201,7 @@ function draw(){
   b('sr',()=>{sx='';sdone='💚 استخدمت جرعة الإحياء';put('acts',{k:'n',ro:'sorcerer',t:'',x:'revive'})});
   b('ss',()=>{sx='';sdone='✅ أبقيت الجرعتين';put('acts',{k:'n',ro:'sorcerer',t:'',x:'skip'})});
   b('sp',()=>put('acts',{k:'s'}));
+  b('vk',()=>{picked=null;put('votes',{t:'skip'})});
   b('nw',()=>updateDoc(doc(db,'rooms',C),{status:'lobby',ph:null}));
   b('gl',()=>leaveFn&&leaveFn());
 }
