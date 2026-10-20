@@ -15,14 +15,13 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,updateDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
 const app=initializeApp({
-  apiKey:"AIzaSyC0raHI8DivZ0e5QNIM9EgYf4JeO3m3pc8",
-  authDomain:"mafia-majlis.firebaseapp.com",
-  projectId:"mafia-majlis",
-  storageBucket:"mafia-majlis.firebasestorage.app",
-  messagingSenderId:"471485943029",
-  appId:"1:471485943029:web:fc182eab8df6ee3d7209bc"
+apiKey:"AIzaSyC0raHI8DivZ0e5QNIM9EgYf4JeO3m3pc8",
+authDomain:"mafia-majlis.firebaseapp.com",
+projectId:"mafia-majlis",
+storageBucket:"mafia-majlis.firebasestorage.app",
+messagingSenderId:"471485943029",
+appId:"1:471485943029:web:fc182eab8df6ee3d7209bc"
 });
 const auth=getAuth(app),db=getFirestore(app);
 const SOC=import('./social.js?'+Date.now()).catch(e=>{console.error(e);return null});
@@ -42,126 +41,124 @@ const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const c=docum
 const num=n=>Number(n||0).toLocaleString('en');
 const topbar=x=>'<div class="top"><div class="tl"><img class="av tav" data-w="av" src="'+esc(prof.photo)+'" alt=""><div class="coin" data-w="coin"><i class="ic ic-det"></i>'+num(prof.coins)+'</div><div class="coin" data-w="gem"><i class="ic ic-mafia"></i>'+num(prof.gems)+'<b class="plus">+</b></div></div>'+(x||'')+'</div>';
 const hdr=t=>'<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">'+t+'</h1><span style="width:44px"></span></div>';
-
 function login(msg){
-  stop();th(false);
-  A.innerHTML='<main><h1 class="h">🎭 مجلس المافيا</h1><div class="card c"><p>سجّل دخولك عشان تلعب</p></div><button class="gbtn" id="g">'+GSVG+'<span>الدخول عن طريق قوقل</span></button><div class="err" id="e">'+esc(msg)+'</div></main>';
-  $('g').onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){login('ما انفتح الدخول: '+e.code)}};
+stop();th(false);
+A.innerHTML='<main><h1 class="h">🎭 مجلس المافيا</h1><div class="card c"><p>سجّل دخولك عشان تلعب</p></div><button class="gbtn" id="g">'+GSVG+'<span>الدخول عن طريق قوقل</span></button><div class="err" id="e">'+esc(msg)+'</div></main>';
+$('g').onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){login('ما انفتح الدخول: '+e.code)}};
 }
-
 /* عجلات تاريخ الميلاد */
 const yrs=()=>{const y=new Date().getFullYear(),a=[];for(let i=y-13;i>=y-80;i--)a.push(i);return a};
 const wh=(id,arr,t)=>'<div class="wh" id="'+id+'">'+arr.map(v=>'<div>'+t(v)+'</div>').join('')+'</div>';
 function wheelsHTML(){
-  const D=[...Array(31)].map((_,i)=>i+1),M=[...Array(12)].map((_,i)=>i+1);
-  return '<p class="l">تاريخ الميلاد (اسحب فوق وتحت)</p><div class="wheels">'+wh('wd',D,v=>v)+wh('wm',M,v=>MN[v-1])+wh('wy',yrs(),v=>v)+'</div><p id="ag" class="c"></p>';
+const D=[...Array(31)].map((_,i)=>i+1),M=[...Array(12)].map((_,i)=>i+1);
+return '<p class="l">تاريخ الميلاد (اسحب فوق وتحت)</p><div class="wheels">'+wh('wd',D,v=>v)+wh('wm',M,v=>MN[v-1])+wh('wy',yrs(),v=>v)+'</div><p id="ag" class="c"></p>';
 }
 const mark=el=>{const i=Math.round(el.scrollTop/40);[...el.children].forEach((c,k)=>c.classList.toggle('on',k===i))};
 function readB(){
-  const i=id=>Math.round($(id).scrollTop/40);
-  const d=i('wd')+1,m=i('wm')+1,y=yrs()[i('wy')];
-  draft.birth=y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-  const ok=new Date(y,m-1,d).getMonth()===m-1;
-  $('ag').textContent=ok?'عمرك: '+age(draft.birth)+' سنة':'تاريخ غير صحيح';
+const i=id=>Math.round($(id).scrollTop/40);
+const d=i('wd')+1,m=i('wm')+1,y=yrs()[i('wy')];
+draft.birth=y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+const ok=new Date(y,m-1,d).getMonth()===m-1;
+$('ag').textContent=ok?'عمرك: '+age(draft.birth)+' سنة':'تاريخ غير صحيح';
 }
 function bindWheels(){
-  const cur=(draft.birth||'').split('-').map(Number),Y=yrs();
-  const init={wd:(cur[2]||1)-1,wm:(cur[1]||1)-1,wy:Math.max(0,Y.indexOf(cur[0]||new Date().getFullYear()-25))};
-  ['wd','wm','wy'].forEach(id=>{
-    const el=$(id);el.scrollTop=init[id]*40;mark(el);
-    let t;el.onscroll=()=>{clearTimeout(t);t=setTimeout(()=>{mark(el);readB()},80)};
-  });
-  readB();
+const cur=(draft.birth||'').split('-').map(Number),Y=yrs();
+const init={wd:(cur[2]||1)-1,wm:(cur[1]||1)-1,wy:Math.max(0,Y.indexOf(cur[0]||new Date().getFullYear()-25))};
+['wd','wm','wy'].forEach(id=>{
+const el=$(id);el.scrollTop=init[id]*40;mark(el);
+let t;el.onscroll=()=>{clearTimeout(t);t=setTimeout(()=>{mark(el);readB()},80)};
+});
+readB();
 }
 function formHTML(edit){
-  return '<div class="card c"><label class="avw"><img id="pv" class="av big" src="'+esc(draft.photo)+'"><span class="cam">📷</span><input type="file" id="pf" accept="image/*" hidden></label>'+
-  '<input id="nm" maxlength="14" placeholder="اسمك في اللعبة" value="'+esc(draft.name)+'">'+wheelsHTML()+
-  '<div class="err" id="e"></div><button class="btn" id="sv">'+(edit?'حفظ التعديلات':'إنشاء الحساب')+'</button></div>';
+return '<div class="card c"><label class="avw"><img id="pv" class="av big" src="'+esc(draft.photo)+'"><span class="cam">📷</span><input type="file" id="pf" accept="image/*" hidden></label>'+
+'<input id="nm" maxlength="14" placeholder="اسمك في اللعبة" value="'+esc(draft.name)+'">'+wheelsHTML()+
+'<div class="err" id="e"></div><button class="btn" id="sv">'+(edit?'حفظ التعديلات':'إنشاء الحساب')+'</button></div>';
 }
 function bindForm(edit){
-  $('pf').onchange=async e=>{const f=e.target.files[0];if(f){draft.photo=await readImg(f);$('pv').src=draft.photo}};
-  $('nm').oninput=e=>draft.name=e.target.value;
-  bindWheels();
-  $('sv').onclick=()=>saveProfile(edit);
+$('pf').onchange=async e=>{const f=e.target.files[0];if(f){draft.photo=await readImg(f);$('pv').src=draft.photo}};
+$('nm').oninput=e=>draft.name=e.target.value;
+bindWheels();
+$('sv').onclick=()=>saveProfile(edit);
 }
 const pubProf=()=>setDoc(doc(db,'profiles',me.uid),{name:prof.name,photo:prof.photo,pid:prof.pid,gender:prof.gender||'',region:prof.region||''});
 async function updateProf(p){await updateDoc(doc(db,'users',me.uid),p);prof={...prof,...p};await pubProf()}
 async function saveProfile(edit){
-  const n=draft.name.trim(),e=m=>$('e').textContent=m;
-  if(n.length<2){e('الاسم قصير');return}
-  const [y,m,d]=draft.birth.split('-').map(Number);
-  if(new Date(y,m-1,d).getMonth()!==m-1){e('تاريخ ميلاد غير صحيح');return}
-  if(age(draft.birth)<13){e('اللعبة للعمر 13 سنة وفوق');return}
-  try{
-    if(edit){
-      prof={...prof,name:n,photo:draft.photo,birth:draft.birth};
-      await updateDoc(doc(db,'users',me.uid),{name:n,photo:draft.photo,birth:draft.birth});
-      await pubProf();
-      toast('انحفظ ✅');shell();
-    }else{
-      let pid;do{pid=String(Math.floor(100000+Math.random()*900000))}while((await getDoc(doc(db,'ids',pid))).exists());
-      await setDoc(doc(db,'ids',pid),{uid:me.uid});
-      prof={name:n,photo:draft.photo,birth:draft.birth,pid};
-      await setDoc(doc(db,'users',me.uid),{...prof,createdAt:serverTimestamp()});
-      await pubProf();
-      if(Social)Social.start();
-      shell();
-    }
-  }catch(x){e('مشكلة: '+x.code)}
+const n=draft.name.trim(),e=m=>$('e').textContent=m;
+if(n.length<2){e('الاسم قصير');return}
+const [y,m,d]=draft.birth.split('-').map(Number);
+if(new Date(y,m-1,d).getMonth()!==m-1){e('تاريخ ميلاد غير صحيح');return}
+if(age(draft.birth)<13){e('اللعبة للعمر 13 سنة وفوق');return}
+try{
+if(edit){
+prof={...prof,name:n,photo:draft.photo,birth:draft.birth};
+await updateDoc(doc(db,'users',me.uid),{name:n,photo:draft.photo,birth:draft.birth});
+await pubProf();
+toast('انحفظ ✅');shell();
+}else{
+let pid;do{pid=String(Math.floor(100000+Math.random()*900000))}while((await getDoc(doc(db,'ids',pid))).exists());
+await setDoc(doc(db,'ids',pid),{uid:me.uid});
+prof={name:n,photo:draft.photo,birth:draft.birth,pid};
+await setDoc(doc(db,'users',me.uid),{...prof,createdAt:serverTimestamp()});
+await pubProf();
+if(Social)Social.start();
+shell();
+}
+}catch(x){e('مشكلة: '+x.code)}
 }
 function setup(){
-  th(false);
-  A.innerHTML='<div class="top"><div class="logo">🎭 مجلس المافيا</div></div><main><h2 class="h">أنشئ حسابك</h2>'+formHTML(false)+'</main>';
-  bindForm(false);
+th(false);
+A.innerHTML='<div class="top"><div class="logo">🎭 مجلس المافيا</div></div><main><h2 class="h">أنشئ حسابك</h2>'+formHTML(false)+'</main>';
+bindForm(false);
 }
-
 /* القوائم الرئيسية */
 const navHTML=()=>'<nav style="gap:8px">'+[['play','🎮','اللعب'],['store','🛒','المتجر'],['msg','💬','الرسائل'],['mom','✨','اللحظات'],['me','👤','أنا']].map(t=>'<button data-t="'+t[0]+'" data-n="'+(t[0]==='msg'&&Social?Social.badgeN():0)+'" class="'+(tab===t[0]?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('')+'</nav>';
 const bindNav=()=>document.querySelectorAll('nav button').forEach(x=>x.onclick=()=>{tab=x.dataset.t;shell()});
 function shell(msg){
-  stop();th(tab!=='play');
-  if(tab==='msg'){
-    if(Social){Social.tabScreen();return}
-    A.innerHTML='<main><div class="empty">تعذر تحميل الرسائل<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
-    bindNav();return;
-  }
-  if(tab==='me'){
-    if(Me){Me.screen();return}
-    A.innerHTML='<main><div class="empty">تعذر تحميل الصفحة<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
-    bindNav();return;
-  }
-  if(tab==='store'||tab==='mom'){
-    const t=tab==='store'?['🛒','المتجر']:['✨','اللحظات'];
-    A.innerHTML='<div class="mh"><h1>'+t[1]+'</h1></div><div class="list"><div class="empty"><div style="font-size:56px">'+t[0]+'</div>'+t[1]+' قريبًا</div></div>'+navHTML();
-    bindNav();return;
-  }
-  const b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
-  A.innerHTML=topbar('<div class="logo">🎭 مجلس المافيا</div>')+'<div class="qa"><button class="qb" id="q1"><i>🏆</i>الرتبة</button><button class="qb" id="q2"><i>📋</i>المهام</button><button class="qb" id="q3"><i>👥</i>يلعب الأصدقاء</button></div><main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
-  bindNav();
-  const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
-  $('rc').onclick=R(()=>Rooms.quick('classic'));
-  $('rm2').onclick=R(()=>Rooms.quick('mad'));
-  $('cus').onclick=R(()=>Rooms.custom());
-  $('off').onclick=()=>toast('الأوف لاين قريبًا');
-  $('q1').onclick=()=>toast('الرتبة قريبًا');
-  $('q2').onclick=()=>toast('المهام قريبًا');
-  $('q3').onclick=()=>toast('يلعب الأصدقاء قريبًا');
+stop();th(tab!=='play');
+if(tab==='msg'){
+if(Social){Social.tabScreen();return}
+A.innerHTML='<main><div class="empty">تعذر تحميل الرسائل<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
+bindNav();return;
+}
+if(tab==='me'){
+if(Me){Me.screen();return}
+A.innerHTML='<main><div class="empty">تعذر تحميل الصفحة<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
+bindNav();return;
+}
+if(tab==='store'||tab==='mom'){
+const t=tab==='store'?['🛒','المتجر']:['✨','اللحظات'];
+A.innerHTML='<div class="mh"><h1>'+t[1]+'</h1></div><div class="list"><div class="empty"><div style="font-size:56px">'+t[0]+'</div>'+t[1]+' قريبًا</div></div>'+navHTML();
+bindNav();return;
+}
+const b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
+A.innerHTML=topbar('<button class="ib" id="st">⚙️</button>')+'<div class="qa"><button class="qb" id="q1"><i>🏆</i>الرتبة</button><button class="qb" id="q2"><i>📋</i>المهام</button><button class="qb" id="q3"><i>👥</i>يلعب الأصدقاء</button></div><main><div class="logo" style="text-align:center;font-size:26px;margin-bottom:16px">🎭 مجلس المافيا</div>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
+bindNav();
+const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
+$('rc').onclick=R(()=>Rooms.quick('classic'));
+$('rm2').onclick=R(()=>Rooms.quick('mad'));
+$('cus').onclick=R(()=>Rooms.custom());
+$('off').onclick=()=>toast('الأوف لاين قريبًا');
+$('q1').onclick=()=>toast('الرتبة قريبًا');
+$('q2').onclick=()=>toast('المهام قريبًا');
+$('q3').onclick=()=>toast('يلعب الأصدقاء قريبًا');
+$('st').onclick=()=>Me?Me.settings():toast('تعذر تحميل الإعدادات، حدّث الصفحة');
 }
 const ctx={A,esc,toast,th,hdr,topbar,nav:navHTML,bindNav,home:m=>shell(m),get me(){return me},get prof(){return prof},
-  invite:(c,r,ids)=>Social?Social.inviteModal(c,r,ids):toast('تعذر تحميل الدعوات'),
-  joinInvite:(c,ph)=>{if(Social)Social.stopChat();Rooms?Rooms.joinByInvite(c,ph):toast('تعذر تحميل الغرف')},
-  update:updateProf,readImg,age,logout:()=>signOut(auth),
-  picker:{html:wheelsHTML,bind:bindWheels,get:()=>draft.birth,set:b=>{draft.birth=b}}};
+invite:(c,r,ids)=>Social?Social.inviteModal(c,r,ids):toast('تعذر تحميل الدعوات'),
+joinInvite:(c,ph)=>{if(Social)Social.stopChat();Rooms?Rooms.joinByInvite(c,ph):toast('تعذر تحميل الغرف')},
+update:updateProf,readImg,age,logout:()=>signOut(auth),
+picker:{html:wheelsHTML,bind:bindWheels,get:()=>draft.birth,set:b=>{draft.birth=b}}};
 onAuthStateChanged(auth,async u=>{
-  me=u;
-  Social=await SOC;Rooms=await ROO;Me=await MEM;
-  if(!inited){if(Social)Social.init(ctx);if(Rooms)Rooms.init(ctx);if(Me)Me.init(ctx);inited=true}
-  if(!u){if(Social)Social.reset();login('');return}
-  try{
-    const s=await getDoc(doc(db,'users',u.uid));
-    if(s.exists()){prof=s.data();await pubProf();if(Social)Social.start();shell()}
-    else{draft={name:u.displayName||'',photo:u.photoURL||'',birth:''};setup()}
-  }catch(x){login('مشكلة: '+x.code)}
+me=u;
+Social=await SOC;Rooms=await ROO;Me=await MEM;
+if(!inited){if(Social)Social.init(ctx);if(Rooms)Rooms.init(ctx);if(Me)Me.init(ctx);inited=true}
+if(!u){if(Social)Social.reset();login('');return}
+try{
+const s=await getDoc(doc(db,'users',u.uid));
+if(s.exists()){prof=s.data();await pubProf();if(Social)Social.start();shell()}
+else{draft={name:u.displayName||'',photo:u.photoURL||'',birth:''};setup()}
+}catch(x){login('مشكلة: '+x.code)}
 });
 </script>
 </body>
