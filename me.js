@@ -14,7 +14,7 @@ export function screen(){
   const p=X.prof,l=lvl();
   X.A.innerHTML='<div class="meh" id="meh"><img class="mebg" src="'+esc(p.photo)+'" alt=""><div class="mer"><img class="mepic" src="'+esc(p.photo)+'" alt=""><div class="men"><div class="mnm">'+esc(p.name)+'</div><div class="lvr"><span>Lv.'+l.n+'</span><div class="lvb"><i style="width:'+Math.min(100,Math.round(l.xp/l.need*100))+'%"></i></div><span>'+l.xp+'/'+l.need+'</span></div></div><span class="chv">‹</span></div></div><div class="list"></div>'+X.nav();
   X.bindNav();
-  $('meh').onclick=edit;
+  $('meh').onclick=()=>edit();
 }
 
 /* نافذة سفلية للتعديل */
@@ -28,8 +28,31 @@ function sheet(title,html){
 }
 const fdate=b=>b?b.replace(/-/g,'/'):'غير محدد';
 
+/* الإعدادات */
+export function settings(){
+  X.th(true);
+  const row=(id,k,red)=>'<div class="ir" id="'+id+'"><span class="k"'+(red?' style="color:#e0475b"':'')+'>'+k+'</span><span class="v"></span></div>';
+  X.A.innerHTML=X.hdr('الإعدادات')+'<div class="irs">'+
+    row('s-ac','إدارة الحساب')+
+    '<div class="sg"></div>'+
+    row('s-pv','الخصوصية')+row('s-gn','عام')+
+    '<div class="sg"></div>'+
+    row('s-sw','تبديل الحساب')+row('s-lo','تسجيل الخروج',true)+
+    '</div>';
+  $('bk').onclick=()=>X.home();
+  $('s-ac').onclick=()=>edit(settings);
+  $('s-pv').onclick=()=>X.toast('الخصوصية قريبًا');
+  $('s-gn').onclick=()=>X.toast('الإعدادات العامة قريبًا');
+  $('s-sw').onclick=()=>X.logout();
+  $('s-lo').onclick=()=>{
+    const s=sheet('تسجيل الخروج','<p class="c">متأكد تبي تسجل خروج؟</p><button class="btn" id="lo-y">تسجيل الخروج</button>');
+    s.o.querySelector('#lo-y').onclick=()=>{s.close();X.logout()};
+  };
+}
+
 /* صفحة تعديل المعلومات */
-export function edit(){
+export function edit(back){
+  back=back||screen;
   X.th(true);
   const p=X.prof,l=lvl();
   const row=(id,k,v,go)=>'<div class="ir" id="'+id+'"><span class="k">'+k+'</span><span class="v'+(go===false?' nc':'')+'">'+v+'</span></div>';
@@ -39,10 +62,9 @@ export function edit(){
     row('r-gd','الجنس',gname(p.gender))+row('r-bd','عيد ميلاد',fdate(p.birth)+' · '+X.age(p.birth)+' سنة')+row('r-rg','منطقة',cname(p.region))+
     '<div class="sg"></div>'+
     row('r-lv','المستوى','Lv.'+l.n,false)+row('r-tt','اللقب','لا يوجد',false)+row('r-bg','الشارات','لا يوجد',false)+
-    '</div><div class="pad"><button class="btn ghost" id="lo" style="margin:18px 0;color:#e0475b;border-color:#e0475b">تسجيل خروج</button></div><input type="file" id="phf" accept="image/*" hidden>';
-  const save=async(patch,close)=>{try{await X.update(patch);if(close)close();edit()}catch(x){X.toast('مشكلة: '+x.code)}};
-  $('bk').onclick=screen;
-  $('lo').onclick=()=>X.logout();
+    '</div><input type="file" id="phf" accept="image/*" hidden>';
+  const save=async(patch,close)=>{try{await X.update(patch);if(close)close();edit(back)}catch(x){X.toast('مشكلة: '+x.code)}};
+  $('bk').onclick=()=>back();
   $('r-id').onclick=()=>{try{navigator.clipboard.writeText(p.pid);X.toast('تم نسخ الـ ID')}catch(e){}};
   $('r-ph').onclick=()=>$('phf').click();
   $('phf').onchange=async e=>{const f=e.target.files[0];if(f)save({photo:await X.readImg(f)})};
