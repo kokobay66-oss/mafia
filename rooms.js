@@ -63,7 +63,7 @@ async function seatInfo(c,mx){
 async function newRoom(o){
   let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
   const ph=o.pass?await hash(c+':'+o.pass):null;
-  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,mode:o.mode,max:o.max,sorc:!!o.sorc,ph,createdAt:serverTimestamp()});
+  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,mode:o.mode,max:o.max,sorc:!!o.sorc,pwh:ph,createdAt:serverTimestamp()});
   await addMe(c,0);enter(c);
 }
 async function joinRoom(c,pw){
@@ -73,9 +73,9 @@ async function joinRoom(c,pw){
     if(!s.exists()){custom('ما لقيت الغرفة',false,c);return}
     const r=s.data();
     if(r.status!=='lobby'){custom('اللعبة بدأت',false,c);return}
-    if(r.ph){
+    if(r.pwh){
       if(!pw){custom('الغرفة محمية بكلمة سر',true,c);return}
-      if(await hash(c+':'+pw)!==r.ph){custom('كلمة السر غلط',true,c);return}
+      if(await hash(c+':'+pw)!==r.pwh){custom('كلمة السر غلط',true,c);return}
     }
     const si=await seatInfo(c,r.max||10);
     if(si.seat<0){custom('الغرفة ممتلئة',false,c);return}
@@ -90,7 +90,7 @@ export async function joinByInvite(c,ph){
     const mine=await getDoc(doc(db,'rooms',c,'players',X.me.uid));
     if(mine.exists()&&rm.status==='lobby'){enter(c);return}
     if(rm.status!=='lobby'){toast('اللعبة بدأت');return}
-    if(rm.ph&&rm.ph!==ph){toast('الغرفة محمية بكلمة سر');return}
+    if(rm.pwh&&rm.pwh!==ph){toast('الغرفة محمية بكلمة سر');return}
     const si=await seatInfo(c,rm.max||10);
     if(si.seat<0){toast('الغرفة ممتلئة');return}
     await addMe(c,si.seat);enter(c);
@@ -148,7 +148,7 @@ function render(){
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
   const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART;
   X.A.classList.add('fix');
-  X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.ph?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
+  X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
   '<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
   (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
