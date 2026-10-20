@@ -242,7 +242,7 @@ let inviteRoomPh='';
 export async function inviteModal(code,room,inRoom){
   const fr=friends.filter(f=>f.status==='friends');
   await Promise.all(fr.map(f=>getU(f.id)));
-  inviteRoomPh=room.ph||'';
+  inviteRoomPh=room.pwh||'';
   const o=document.createElement('div');o.className='ov';
   o.innerHTML='<div class="sh"><div class="shh"><b>ادعُ أصدقاءك</b><button class="mini" id="ovx">✕</button></div>'+
     (fr.length?fr.map(f=>{const u=U[f.id],ins=inRoom.includes(f.id);return '<div class="fr"><img class="av" src="'+esc(u.photo)+'" alt=""><div class="fi"><div class="pn">'+esc(u.name)+'</div><div class="pi">ID: '+esc(u.pid)+'</div></div><button class="mini'+(ins?'':' ok')+'" data-i="'+f.id+'"'+(ins?' disabled':'')+'>'+(ins?'داخل الغرفة':'دعوة')+'</button></div>'}).join(''):'<p class="c">ما عندك أصدقاء بعد. أضفهم من تبويب الرسائل.</p>')+'</div>';
@@ -252,4 +252,4 @@ export async function inviteModal(code,room,inRoom){
     b.disabled=true;
     try{await sendInvite(b.dataset.i,code);b.textContent='تمت الدعوة ✅';b.classList.remove('ok')}catch(x){b.disabled=false;toast('مشكلة: '+x.code)}
   });
-}
+    }
