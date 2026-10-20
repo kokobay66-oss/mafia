@@ -40,7 +40,7 @@ const toast=m=>{const t=document.createElement('div');t.className='toast';t.text
 const age=b=>{const [y,m,d]=b.split('-').map(Number),n=new Date();let a=n.getFullYear()-y;if(n<new Date(n.getFullYear(),m-1,d))a--;return a};
 const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const s=Math.min(i.width,i.height);c.getContext('2d').drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,128,128);r(c.toDataURL('image/jpeg',.8))};i.src=URL.createObjectURL(f)});
 const num=n=>Number(n||0).toLocaleString('en');
-const topbar=x=>'<div class="top"><div class="tl"><img class="av tav" data-w="av" src="'+esc(prof.photo)+'" alt=""><div class="coin" data-w="coin"><i class="ic ic-coin"></i>'+num(prof.coins)+'</div><div class="coin" data-w="gem"><i class="ic ic-gem"></i>'+num(prof.gems)+'<b class="plus">+</b></div></div>'+(x||'')+'</div>';
+const topbar=x=>'<div class="top"><div class="tl"><img class="av tav" data-w="av" src="'+esc(prof.photo)+'" alt=""><div class="coin" data-w="coin"><i class="ic ic-det"></i>'+num(prof.coins)+'</div><div class="coin" data-w="gem"><i class="ic ic-mafia"></i>'+num(prof.gems)+'<b class="plus">+</b></div></div>'+(x||'')+'</div>';
 const hdr=t=>'<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">'+t+'</h1><span style="width:44px"></span></div>';
 
 function login(msg){
@@ -136,13 +136,16 @@ function shell(msg){
     bindNav();return;
   }
   const b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
-  A.innerHTML=topbar('<div class="logo">🎭 مجلس المافيا</div>')+'<main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
+  A.innerHTML=topbar('<div class="logo">🎭 مجلس المافيا</div>')+'<div class="qa"><button class="qb" id="q1"><i>🏆</i>الرتبة</button><button class="qb" id="q2"><i>📋</i>المهام</button><button class="qb" id="q3"><i>👥</i>يلعب الأصدقاء</button></div><main>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
   bindNav();
   const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
   $('rc').onclick=R(()=>Rooms.quick('classic'));
   $('rm2').onclick=R(()=>Rooms.quick('mad'));
   $('cus').onclick=R(()=>Rooms.custom());
   $('off').onclick=()=>toast('الأوف لاين قريبًا');
+  $('q1').onclick=()=>toast('الرتبة قريبًا');
+  $('q2').onclick=()=>toast('المهام قريبًا');
+  $('q3').onclick=()=>toast('يلعب الأصدقاء قريبًا');
 }
 const ctx={A,esc,toast,th,hdr,topbar,nav:navHTML,bindNav,home:m=>shell(m),get me(){return me},get prof(){return prof},
   invite:(c,r,ids)=>Social?Social.inviteModal(c,r,ids):toast('تعذر تحميل الدعوات'),
