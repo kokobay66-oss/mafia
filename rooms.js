@@ -1,5 +1,6 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import * as V from "./voice.js";
 
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
@@ -12,7 +13,7 @@ const toast=m=>X.toast(m);
 const tagName=m=>m==='mad'?'دموي':'كلاسيكي';
 const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 export function init(c){X=c;GM.then(g=>{Game=g;if(g)g.init(c)})}
-export function stopRoom(){un.forEach(f=>f());un=[];if(Game)Game.stop();code=null;room=null;players=[];rchat=[]}
+export function stopRoom(){un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
 
 /* شاشة المخصص */
 export function custom(msg,needPw,cv){
@@ -143,17 +144,17 @@ async function rsend(){
 function render(){
   if(!room||!code)return;
   const host=room.host===X.me.uid,mx=room.max||10,half=Math.ceil(mx/2),mode=room.mode||'classic';
-  if(room.status==='playing'){X.A.classList.remove('fix');if(Game)Game.show(code,room,players,askLeave);return}
-  if(Game)Game.stop();
+  if(room.status==='playing'&&!(Game&&Game.closed(room))){X.A.classList.remove('fix');if(Game)Game.show(code,room,players,askLeave,render);return}
+  if(Game&&room.status!=='playing')Game.stop();
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
-  const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART;
+  const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART&&room.status!=='playing';
   X.A.classList.add('fix');
   X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
   '<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
   (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
   '<button class="btn alt" id="iv" style="font-size:15px;padding:12px">📨 دعوة</button></div>'+col(R(mx-half).map(i=>i+half))+'</div></div>'+
-  '<div class="rc dock"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb"><input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div>';
+  '<div class="rc dock"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb">'+V.html()+'<input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div>';
   document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
   if(host&&can)$('s').onclick=()=>Game?Game.start(code,players,room):toast('تعذر تحميل اللعبة');
   $('l').onclick=askLeave;
@@ -162,6 +163,7 @@ function render(){
   $('ri').onkeydown=e=>{if(e.key==='Enter')rsend()};
   $('ri').value=keep;if(foc)$('ri').focus();
   const m=$('rm');m.scrollTop=m.scrollHeight;
+  V.force(null);V.bind(toast);
 }
 async function leave(){
   const c=code,me=X.me.uid,host=room&&room.host===me,pub=room&&room.public,st=room&&room.status;
