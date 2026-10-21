@@ -10,16 +10,20 @@ const cname=c=>{const f=C.find(x=>x[0]===c);return f?flag(c)+' '+f[1]:'غير م
 const gname=g=>g==='m'?'ذكر':g==='f'?'أنثى':'غير محدد';
 const lvl=()=>{const n=X.prof.lv||1,xp=X.prof.xp||0,need=n*100;return {n,xp,need}};
 export function init(c){X=c}
-
-/* تبويب أنا: الجزء العلوي فقط */
 export function screen(){
   X.th(true);
   const p=X.prof,l=lvl();
-  X.A.innerHTML='<div class="meh" id="meh"><img class="mebg" src="'+esc(p.photo)+'" alt=""><div class="mer"><img class="mepic" src="'+esc(p.photo)+'" alt=""><div class="men"><div class="mnm">'+esc(p.name)+'</div><div class="lvr"><span>Lv.'+l.n+'</span><div class="lvb"><i style="width:'+Math.min(100,Math.round(l.xp/l.need*100))+'%"></i></div><span>'+l.xp+'/'+l.need+'</span></div></div><span class="chv">‹</span></div></div><div class="list"></div>'+X.nav();
+  const g=p.games||0,w=p.wins||0,pc=g?Math.round(w/g*100):0;
+  const st=[[g,'ألعاب'],[w,'فوز'],[pc+'%','نسبة الفوز']];
+  X.A.innerHTML='<div class="meh" id="meh"><img class="mebg" src="'+esc(p.photo)+'" alt=""><div class="mer"><img class="mepic" src="'+esc(p.photo)+'" alt=""><div class="men"><div class="mnm">'+esc(p.name)+'</div><div class="lvr"><span>Lv.'+l.n+'</span><div class="lvb"><i style="width:'+Math.min(100,Math.round(l.xp/l.need*100))+'%"></i></div><span>'+l.xp+'/'+l.need+'</span></div></div><span class="chv">‹</span></div></div>'+
+    '<div class="list"><div class="stats">'+st.map(s=>'<div><b>'+s[0]+'</b><span>'+s[1]+'</span></div>').join('')+'</div>'+
+    '<div class="ir" id="m-mo"><span class="k">📸 لحظاتي</span><span class="v"></span></div><div class="sg"></div>'+
+    '<div class="ir" id="m-vi"><span class="k">👀 الزوار</span><span class="v"></span></div></div>'+X.nav();
   X.bindNav();
   $('meh').onclick=()=>edit();
+  $('m-mo').onclick=()=>moments();
+  $('m-vi').onclick=()=>X.toast('الزوار قريبًا');
 }
-
 /* نافذة سفلية للتعديل */
 function sheet(title,html){
   const o=document.createElement('div');o.className='ov';
