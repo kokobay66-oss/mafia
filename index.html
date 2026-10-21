@@ -125,7 +125,7 @@ if(tab==='me'){
 if(Me){Me.screen();return}
 A.innerHTML='<main><div class="empty">تعذر تحميل الصفحة<br>حدّث الصفحة وجرب مرة ثانية</div></main>'+navHTML();
 bindNav();return;
-}
+}if(tab==='mom'&&Me){Me.feedTab();return}
 if(tab==='store'||tab==='mom'){
 const t=tab==='store'?['🛒','المتجر']:['✨','اللحظات'];
 A.innerHTML='<div class="mh"><h1>'+t[1]+'</h1></div><div class="list"><div class="empty"><div style="font-size:56px">'+t[0]+'</div>'+t[1]+' قريبًا</div></div>'+navHTML();
