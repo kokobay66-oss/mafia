@@ -1,5 +1,5 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getFirestore,collection,addDoc,setDoc,getDoc,deleteDoc,doc,query,where,limit,getDocs,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,setDoc,getDoc,updateDoc,addDoc,deleteDoc,doc,query,where,orderBy,limit,getDocs,arrayUnion,arrayRemove,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const db=getFirestore(getApp());
 let X;
 const $=i=>document.getElementById(i);
@@ -120,9 +120,17 @@ export function charge(){
 const PV={public:['🌐','عام'],friends:['👥','الأصدقاء فقط'],private:['🔒','خاص']};
 let mom=[],feed=[];
 const pc={};
-const p2=n=>String(n).padStart(2,'0');
 const ms=t=>t&&t.toMillis?t.toMillis():Date.now();
-const when=t=>{const d=new Date(ms(t));return d.getDate()+'/'+(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes())};
+const when=t=>{const d=new Date(ms(t));return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()};
+const ago=t=>{
+  const s=Math.max(0,(Date.now()-ms(t))/1000);
+  const f=(n,a)=>'قبل '+(n===1?a[0]:n===2?a[1]:n+' '+(n<=10?a[2]:a[3]));
+  if(s<60)return 'قبل لحظات';
+  const m=Math.floor(s/60);if(m<60)return f(m,['دقيقة','دقيقتين','دقائق','دقيقة']);
+  const h=Math.floor(m/60);if(h<24)return f(h,['ساعة','ساعتين','ساعات','ساعة']);
+  const d=Math.floor(h/24);if(d<30)return f(d,['يوم','يومين','أيام','يوم']);
+  return when(t);
+};
 const bigImg=f=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>{const k=Math.min(1,640/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.6))};i.onerror=rej;i.src=URL.createObjectURL(f)});
 const pics=m=>m.photos||(m.photo?[m.photo]:[]);
 const getP=async u=>{
@@ -131,19 +139,91 @@ const getP=async u=>{
   catch(e){pc[u]={name:'لاعب',photo:''}}
   return pc[u];
 };
+const pr=u=>u===X.me.uid?X.prof:(pc[u]||{name:'لاعب',photo:''});
+const find=id=>feed.find(m=>m.id===id)||mom.find(m=>m.id===id);
+const upd=(id,fn)=>[feed,mom].forEach(a=>a.forEach(m=>{if(m.id===id)fn(m)}));
+const SV='<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">';
+const heart=on=>'<svg viewBox="0 0 24 24" width="28" height="28" fill="'+(on?'#e0475b':'none')+'" stroke="'+(on?'#e0475b':'currentColor')+'" stroke-width="1.8" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.5-9.2C1 8.4 3 5 6.4 5c2 0 3.6 1.1 5.6 3.2C14 6.1 15.6 5 17.6 5 21 5 23 8.4 21.5 11.8 19.5 16.4 12 21 12 21z"/></svg>';
+const IC_C=SV+'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
+const IC_S=SV+'<path d="M14 5l7 7-7 7v-4c-6 0-9.5 1.8-11 5 .5-6 4.5-10 11-10z"/></svg>';
 function zoom(src){
   const o=document.createElement('div');o.className='lb';o.innerHTML='<img src="'+src+'" alt="">';
   o.onclick=()=>o.remove();document.body.appendChild(o);
 }
-function card(m,own){
-  const p=m.uid===X.me.uid?X.prof:(pc[m.uid]||{name:m.name||'لاعب',photo:''}),ph=pics(m);
-  return '<div class="mc"><div class="mt"><span class="who"><img class="av" src="'+esc(p.photo)+'" alt="">'+esc(p.name)+'</span><span>'+PV[m.privacy||'public'][0]+' '+when(m.at)+(own?' <button class="mini" data-d="'+m.id+'">🗑</button>':'')+'</span></div>'+
+function card(m){
+  const me=X.me.uid,p=pr(m.uid),ph=pics(m),lk=m.likes||[],liked=lk.includes(me);
+  const names=lk.slice(-8).reverse().map(u=>esc(pr(u).name)).join('، ');
+  return '<div class="mc" data-m="'+m.id+'"><div class="mh2"><img class="av" src="'+esc(p.photo)+'" alt=""><div class="mi"><b>'+esc(p.name)+'</b><span>'+ago(m.at)+(m.privacy&&m.privacy!=='public'?' · '+PV[m.privacy][0]:'')+'</span></div><button class="dots" data-o="'+m.id+'">•••</button></div>'+
     (m.text?'<p class="tx">'+esc(m.text)+'</p>':'')+
-    (ph.length?'<div class="mph '+(ph.length>1?'nm':'n1')+'">'+ph.map(s=>'<img src="'+esc(s)+'" alt="">').join('')+'</div>':'')+'</div>';
+    (ph.length?'<div class="mph '+(ph.length>1?'nm':'n1')+'">'+ph.map(s=>'<img src="'+esc(s)+'" alt="">').join('')+'</div>':'')+
+    '<div class="act"><button class="ab'+(liked?' on':'')+'" data-l="'+m.id+'">'+heart(liked)+(lk.length?'<span>'+lk.length+'</span>':'')+'</button><button class="ab" data-c="'+m.id+'">'+IC_C+'</button><button class="ab" data-s="'+m.id+'">'+IC_S+'</button></div>'+
+    (lk.length?'<div class="lks">♡ '+names+(lk.length>8?' و'+(lk.length-8)+' آخرين':'')+'</div>':'')+'</div>';
 }
 function bindCards(el){
-  el.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>del(b.dataset.d));
+  const on=(a,f)=>el.querySelectorAll('['+a+']').forEach(b=>b.onclick=()=>f(b.getAttribute(a)));
+  on('data-l',like);on('data-c',comments);on('data-s',share);on('data-o',more);
   el.querySelectorAll('.mph img').forEach(i=>i.onclick=()=>zoom(i.src));
+}
+function redraw(id){
+  document.querySelectorAll('[data-m="'+id+'"]').forEach(c=>{const m=find(id);if(m)c.outerHTML=card(m)});
+  const el=$('mf')||$('ml');if(el)bindCards(el);
+}
+async function like(id){
+  const me=X.me.uid,m=find(id);if(!m)return;
+  const has=(m.likes||[]).includes(me);
+  upd(id,x=>{x.likes=has?(x.likes||[]).filter(u=>u!==me):[...(x.likes||[]),me]});
+  redraw(id);
+  try{await updateDoc(doc(db,'moments',id),{likes:has?arrayRemove(me):arrayUnion(me)})}
+  catch(e){
+    upd(id,x=>{x.likes=has?[...(x.likes||[]),me]:(x.likes||[]).filter(u=>u!==me)});
+    redraw(id);X.toast('مشكلة: '+e.code);
+  }
+}
+function share(id){
+  const m=find(id);if(!m)return;
+  const t=(m.text||'لحظة من مجلس المافيا')+'\n'+location.origin+location.pathname;
+  if(navigator.share)navigator.share({text:t}).catch(()=>{});
+  else{try{navigator.clipboard.writeText(t);X.toast('تم نسخ اللحظة')}catch(e){X.toast('ما قدرت أنسخ')}}
+}
+function more(id){
+  const m=find(id);if(!m)return;
+  const own=m.uid===X.me.uid;
+  if(!m.text&&!own){X.toast('ما فيه خيارات');return}
+  const s=sheet('خيارات',(m.text?'<button class="btn alt" id="mo1">📋 نسخ النص</button>':'')+(own?'<button class="btn alt" id="mo2" style="color:#e0475b">🗑 حذف اللحظة</button>':''));
+  const a=s.o.querySelector('#mo1');
+  if(a)a.onclick=()=>{try{navigator.clipboard.writeText(m.text);X.toast('تم النسخ')}catch(e){X.toast('ما قدرت أنسخ')}s.close()};
+  const d=s.o.querySelector('#mo2');
+  if(d)d.onclick=()=>{s.close();del(id)};
+}
+async function comments(id){
+  const m=find(id);if(!m)return;
+  const s=sheet('التعليقات','<div class="cmts" id="cl2"><div class="empty" style="padding:24px">...</div></div><div class="cin"><input id="ci" maxlength="300" placeholder="اكتب تعليق..."><button class="pub" id="cs">إرسال</button></div>');
+  const L=s.o.querySelector('#cl2'),I=s.o.querySelector('#ci'),B=s.o.querySelector('#cs');
+  const C=collection(db,'moments',id,'comments');
+  let list=[];
+  const paintC=()=>{
+    L.innerHTML=list.length?list.map(c=>{const p=pr(c.uid);return '<div class="cm1"><img class="av" src="'+esc(p.photo)+'" alt=""><div class="cb"><b>'+esc(p.name)+'</b><span>'+ago(c.at)+'</span><p>'+esc(c.text)+'</p></div>'+((c.uid===X.me.uid||m.uid===X.me.uid)?'<button class="mini" data-x="'+c.id+'">🗑</button>':'')+'</div>'}).join(''):'<div class="empty" style="padding:24px">ما فيه تعليقات بعد</div>';
+    L.querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{
+      try{await deleteDoc(doc(db,'moments',id,'comments',b.dataset.x));list=list.filter(c=>c.id!==b.dataset.x);paintC()}
+      catch(e){X.toast('مشكلة: '+e.code)}
+    });
+    L.scrollTop=L.scrollHeight;
+  };
+  try{
+    const r=await getDocs(query(C,orderBy('at'),limit(60)));
+    list=r.docs.map(d=>({id:d.id,...d.data()}));
+    await Promise.all([...new Set(list.map(c=>c.uid))].map(getP));
+  }catch(e){X.toast('مشكلة: '+e.code)}
+  paintC();
+  B.onclick=async()=>{
+    const t=I.value.trim();if(!t)return;
+    B.disabled=true;
+    try{
+      const ref=await addDoc(C,{uid:X.me.uid,name:X.prof.name,text:t,at:serverTimestamp()});
+      list.push({id:ref.id,uid:X.me.uid,text:t,at:null});I.value='';paintC();
+    }catch(e){X.toast('مشكلة: '+e.code)}
+    B.disabled=false;
+  };
 }
 
 /* صفحة لحظاتي */
@@ -160,22 +240,24 @@ async function load(){
   try{
     const s=await getDocs(query(collection(db,'moments'),where('uid','==',X.me.uid),limit(50)));
     mom=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ms(b.at)-ms(a.at));
+    await Promise.all([...new Set(mom.flatMap(x=>(x.likes||[]).slice(-8)))].map(getP));
   }catch(e){X.toast('مشكلة: '+e.code);mom=[]}
   paint();
 }
 function paint(){
   const el=$('ml');if(!el)return;
-  el.innerHTML=mom.length?mom.map(m=>card(m,true)).join(''):'<div class="empty">ما نشرت لحظات بعد<br>اضغط 📷 وشارك أول لحظة</div>';
+  el.innerHTML=mom.length?mom.map(card).join(''):'<div class="empty">ما نشرت لحظات بعد<br>اضغط 📷 وشارك أول لحظة</div>';
   bindCards(el);
 }
 
 /* تبويب اللحظات (الكل) */
 export function feedTab(){
   X.th(true);
-  X.A.innerHTML='<div class="mh"><h1>اللحظات</h1><div class="ics"><button class="ib" id="fr2">🔄</button><button class="ib" id="fc">📷</button></div></div><div class="list" id="mf"></div>'+X.nav();
+  X.A.innerHTML='<div class="mh"><h1 id="ft" style="cursor:pointer">اللحظات</h1><div class="ics"><button class="ib" id="fb">🔔</button><button class="ib" id="fc">📷</button></div></div><div class="list" id="mf"></div>'+X.nav();
   X.bindNav();
-  $('fr2').onclick=()=>loadFeed();
+  $('fb').onclick=()=>X.toast('إشعارات اللحظات قريبًا');
   $('fc').onclick=()=>compose(loadFeed);
+  $('ft').onclick=()=>loadFeed();
   loadFeed();
 }
 async function loadFeed(){
@@ -189,12 +271,12 @@ async function loadFeed(){
   const rs=await Promise.allSettled(qs),m=new Map();
   rs.forEach(r=>{if(r.status==='fulfilled')r.value.docs.forEach(d=>m.set(d.id,{id:d.id,...d.data()}))});
   feed=[...m.values()].sort((a,b)=>ms(b.at)-ms(a.at));
-  await Promise.all([...new Set(feed.map(x=>x.uid))].map(getP));
+  await Promise.all([...new Set(feed.flatMap(x=>[x.uid,...(x.likes||[]).slice(-8)]))].map(getP));
   paintFeed();
 }
 function paintFeed(){
   const el=$('mf');if(!el)return;
-  el.innerHTML=feed.length?feed.map(m=>card(m,m.uid===X.me.uid)).join(''):'<div class="empty">ما فيه لحظات بعد<br>كن أول من ينشر 📷</div>';
+  el.innerHTML=feed.length?feed.map(card).join(''):'<div class="empty">ما فيه لحظات بعد<br>كن أول من ينشر 📷</div>';
   bindCards(el);
 }
 function del(id){
@@ -240,7 +322,7 @@ function compose(done){
     const b=q('#cp');b.disabled=true;
     const id=String(9e12-Date.now()).padStart(13,'0')+Math.random().toString(36).slice(2,6);
     try{
-      await setDoc(doc(db,'moments',id),{uid:X.me.uid,name:X.prof.name,text:txt.trim(),photos,privacy:pv,at:serverTimestamp()});
+      await setDoc(doc(db,'moments',id),{uid:X.me.uid,name:X.prof.name,text:txt.trim(),photos,privacy:pv,likes:[],at:serverTimestamp()});
       o.remove();X.toast('انتشرت اللحظة ✅');if(done)done();
     }catch(e){b.disabled=false;X.toast('مشكلة: '+e.code)}
   };
