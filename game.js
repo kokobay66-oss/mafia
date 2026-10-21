@@ -162,9 +162,7 @@ function middle(){
     if(ph==='reveal'){
     const mates=r==='mafia'?myRole.team.filter(u=>u!==me).map(u=>'رقم '+no(u)+' '+nm(u)).join('، '):'';
     const mt=mates?'<p>شريكك: '+mates+'</p>':'';
-    if(CARDS.includes(r))return '<div class="gcard rcw"><img class="rcard" src="card-'+r+'.jpg" alt="'+rl[0]+'">'+mt+'</div>';
-    return '<div class="gcard"><p>دورك</p><div class="em">'+rl[1]+'</div><h2>'+rl[0]+'</h2>'+mt+'</div>';
-    }
+        if(CARDS.includes(r))return '<div class="gcard rcw" style="padding:0;background:none;border:0"><img class="rcard" src="card-'+r+'.jpg" alt="'+rl[0]+'" style="display:block;width:100%;max-width:190px;height:auto;margin:0 auto;border-radius:12px;box-shadow:0 0 18px rgba(0,0,0,.7)">'+mt+'</div>';
   if(ph==='night'){
     if(!iAlive)return ghost;
     if(room.steps[room.st]!==r)return '<div class="gcard"><div class="em">🌙</div><p>الليل... الكل يغمض عينه</p></div>';
