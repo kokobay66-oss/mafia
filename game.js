@@ -159,10 +159,12 @@ function seatG(i,by,vs){
 function middle(){
   const ph=room.ph,r=myRole&&myRole.role,rl=R[r]||['...','⏳'],iAlive=al(me);
   const ghost='<div class="gcard"><div class="em">👻</div><p>أنت مشاهد، تابع بصمت</p></div>';
-    if(ph==='reveal'){
+  if(ph==='reveal'){
     const mates=r==='mafia'?myRole.team.filter(u=>u!==me).map(u=>'رقم '+no(u)+' '+nm(u)).join('، '):'';
     const mt=mates?'<p>شريكك: '+mates+'</p>':'';
-        if(CARDS.includes(r))return '<div class="gcard rcw" style="padding:0;background:none;border:0"><img class="rcard" src="card-'+r+'.jpg" alt="'+rl[0]+'" style="display:block;width:100%;max-width:190px;height:auto;margin:0 auto;border-radius:12px;box-shadow:0 0 18px rgba(0,0,0,.7)">'+mt+'</div>';
+    if(CARDS.includes(r))return '<div class="gcard" style="padding:0;background:none;border:0"><img src="card-'+r+'.jpg" alt="'+rl[0]+'" style="display:block;width:100%;max-width:190px;height:auto;margin:0 auto;border-radius:12px;box-shadow:0 0 18px rgba(0,0,0,.7)">'+mt+'</div>';
+    return '<div class="gcard"><p>دورك</p><div class="em">'+rl[1]+'</div><h2>'+rl[0]+'</h2>'+mt+'</div>';
+  }
   if(ph==='night'){
     if(!iAlive)return ghost;
     if(room.steps[room.st]!==r)return '<div class="gcard"><div class="em">🌙</div><p>الليل... الكل يغمض عينه</p></div>';
@@ -217,4 +219,4 @@ function draw(){
   b('xe',()=>{dis=room.g;V.force(null);if(ren)ren()});
   b('gl',()=>leaveFn&&leaveFn());
   V.bind(X.toast);
-    }
+                                                                       }
