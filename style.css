@@ -240,3 +240,5 @@ nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolu
 .cin{display:flex;gap:8px;margin-top:10px;align-items:center}
 .cin input{margin:0;flex:1;text-align:right}
 .cin .pub{flex:none}
+.rcw{padding:6px;background:transparent;border:0}
+.rcard{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:14px;box-shadow:0 0 22px rgba(0,0,0,.7)}
