@@ -1,3 +1,6 @@
+import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getFirestore,collection,addDoc,deleteDoc,doc,query,where,limit,getDocs,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const db=getFirestore(getApp());
 let X;
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
