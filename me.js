@@ -116,3 +116,70 @@ export function coin(){X.toast('عملة المحقق تكسبها من اللع
 export function charge(){
   sheet('شحن عملة المافيا','<p class="c" style="display:flex;justify-content:center;align-items:center;gap:6px">رصيدك: '+ico('mafia')+'<b>'+num(X.prof.gems)+'</b></p><div class="pks">'+[60,300,680,1500].map(n=>'<div class="pk">'+ico('mafia')+'<b>'+n+'</b><button class="mini" disabled>قريبًا</button></div>').join('')+'</div><p class="c" style="font-size:12px">الشحن بالدفع الحقيقي يتفعّل لما نربط نظام الدفع.</p>');
 }
+/* ===== اللحظات ===== */
+const PV={public:['🌐','عام'],friends:['👥','الأصدقاء فقط'],private:['🔒','خاص']};
+let mom=[];
+const p2=n=>String(n).padStart(2,'0');
+const ms=t=>t&&t.toMillis?t.toMillis():Date.now();
+const when=t=>{const d=new Date(ms(t));return d.getDate()+'/'+(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes())};
+const bigImg=f=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>{const k=Math.min(1,900/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.7))};i.onerror=rej;i.src=URL.createObjectURL(f)});
+
+export function moments(){
+  X.th(true);
+  X.A.innerHTML='<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">لحظاتي</h1><div class="ics"><button class="ib" id="mb">🔔</button><button class="ib" id="mc">📷</button></div></div><div class="list" id="ml"></div>';
+  $('bk').onclick=()=>screen();
+  $('mb').onclick=()=>X.toast('إشعارات اللحظات قريبًا');
+  $('mc').onclick=()=>compose();
+  load();
+}
+async function load(){
+  const el=$('ml');if(el)el.innerHTML='<div class="empty">...</div>';
+  try{
+    const s=await getDocs(query(collection(db,'moments'),where('uid','==',X.me.uid),limit(50)));
+    mom=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ms(b.at)-ms(a.at));
+  }catch(e){X.toast('مشكلة: '+e.code);mom=[]}
+  paint();
+}
+function paint(){
+  const el=$('ml');if(!el)return;
+  el.innerHTML=mom.length?mom.map(m=>'<div class="mc"><div class="mt"><span>'+PV[m.privacy||'public'][0]+' '+when(m.at)+'</span><button class="mini" data-d="'+m.id+'">🗑</button></div>'+(m.text?'<p class="tx">'+esc(m.text)+'</p>':'')+(m.photo?'<img src="'+esc(m.photo)+'" alt="">':'')+'</div>').join(''):'<div class="empty">ما نشرت لحظات بعد<br>اضغط 📷 وشارك أول لحظة</div>';
+  el.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>del(b.dataset.d));
+}
+function del(id){
+  const s=sheet('حذف اللحظة','<p class="c">متأكد تبي تحذفها؟</p><button class="btn" id="dy2">حذف</button>');
+  s.o.querySelector('#dy2').onclick=async()=>{
+    try{await deleteDoc(doc(db,'moments',id));s.close();mom=mom.filter(m=>m.id!==id);paint()}
+    catch(e){X.toast('مشكلة: '+e.code)}
+  };
+}
+function compose(){
+  let txt='',photo='',pv='public';
+  const o=document.createElement('div');o.className='cmp';
+  o.innerHTML='<div class="cmh"><button class="ib" id="cx">✕</button><button class="pub" id="cp" disabled>نشر</button></div><textarea id="ct" maxlength="500" placeholder="ماذا يدور بعقلك؟"></textarea><div class="cph" id="cph"></div><input type="file" id="cf" accept="image/*" hidden><div class="cft"><button class="pvb" id="cv">🌐 عام</button></div>';
+  document.body.appendChild(o);
+  const q=s=>o.querySelector(s);
+  const draw=()=>{
+    q('#cph').innerHTML=photo?'<img src="'+photo+'" alt=""><b>✕</b>':'<span>+</span>';
+    q('#cp').disabled=!(txt.trim()||photo);
+  };
+  draw();
+  q('#ct').oninput=e=>{txt=e.target.value;draw()};
+  q('#cx').onclick=()=>o.remove();
+  q('#cph').onclick=e=>{if(e.target.tagName==='B'){photo='';draw();return}q('#cf').click()};
+  q('#cf').onchange=async e=>{
+    const f=e.target.files[0];e.target.value='';if(!f)return;
+    try{photo=await bigImg(f);draw()}catch(x){X.toast('الصورة ما انفتحت')}
+  };
+  q('#cv').onclick=()=>{
+    const s=sheet('من يشوف لحظتك؟',Object.keys(PV).map(k=>'<button class="btn alt" data-p="'+k+'">'+PV[k][0]+' '+PV[k][1]+(pv===k?' ✓':'')+'</button>').join(''));
+    s.o.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{pv=b.dataset.p;q('#cv').textContent=PV[pv][0]+' '+PV[pv][1];s.close()});
+  };
+  q('#cp').onclick=async()=>{
+    const b=q('#cp');b.disabled=true;
+    try{
+      await addDoc(collection(db,'moments'),{uid:X.me.uid,name:X.prof.name,text:txt.trim(),photo,privacy:pv,at:serverTimestamp()});
+      o.remove();X.toast('انتشرت اللحظة ✅');load();
+    }catch(e){b.disabled=false;X.toast('مشكلة: '+e.code)}
+  };
+  q('#ct').focus();
+}
