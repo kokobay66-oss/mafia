@@ -4,6 +4,7 @@ import * as V from "./voice.js";
 
 const db=getFirestore(getApp());
 const R={mafia:['مافيا','🔪'],doctor:['الطبيب','💉'],detective:['المحقق','🕵️'],sorcerer:['الساحر','🧙'],citizen:['مواطن','🙂']};
+const CARDS=['mafia','doctor','detective','citizen'];
 const T={reveal:5,night:15,dawn:5,talk:40,disc:30,vote:15,vres:6,end:10};
 const PH={reveal:'كشف الأدوار',night:'الليل',dawn:'الفجر',talk:'وقت الكلام',disc:'النقاش المفتوح',vote:'التصويت',vres:'نتيجة التصويت',end:'النهاية'};
 const PR={mafia:'🔪 اضغط على اللاعب اللي تبون تقتلونه',doctor:'💉 اضغط على اللاعب اللي تبي تحميه',detective:'🕵️ اضغط على اللاعب اللي تشك فيه'};
@@ -13,7 +14,7 @@ const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const pickTop=a=>{const c={};a.forEach(t=>c[t]=(c[t]||0)+1);const m=Math.max(...Object.values(c)),top=Object.keys(c).filter(k=>c[k]===m);return top[Math.floor(Math.random()*top.length)]};
-export function init(c){X=c}
+export function init(c){X=c;CARDS.forEach(r=>{new Image().src='card-'+r+'.jpg'})}
 export const closed=rm=>!!rm&&rm.ph==='end'&&dis===rm.g;
 export function stop(){un.forEach(f=>f());un=[];clearTimeout(timer);clearInterval(iv);timer=iv=null;C=null;room=null;H=null;myRole=null;acts=[];votes=[];sx='';sdone='';picked=null;lastPt=-1}
 
@@ -158,10 +159,12 @@ function seatG(i,by,vs){
 function middle(){
   const ph=room.ph,r=myRole&&myRole.role,rl=R[r]||['...','⏳'],iAlive=al(me);
   const ghost='<div class="gcard"><div class="em">👻</div><p>أنت مشاهد، تابع بصمت</p></div>';
-  if(ph==='reveal'){
+    if(ph==='reveal'){
     const mates=r==='mafia'?myRole.team.filter(u=>u!==me).map(u=>'رقم '+no(u)+' '+nm(u)).join('، '):'';
-    return '<div class="gcard"><p>دورك</p><div class="em">'+rl[1]+'</div><h2>'+rl[0]+'</h2>'+(mates?'<p>شريكك: '+mates+'</p>':'')+'</div>';
-  }
+    const mt=mates?'<p>شريكك: '+mates+'</p>':'';
+    if(CARDS.includes(r))return '<div class="gcard rcw"><img class="rcard" src="card-'+r+'.jpg" alt="'+rl[0]+'">'+mt+'</div>';
+    return '<div class="gcard"><p>دورك</p><div class="em">'+rl[1]+'</div><h2>'+rl[0]+'</h2>'+mt+'</div>';
+    }
   if(ph==='night'){
     if(!iAlive)return ghost;
     if(room.steps[room.st]!==r)return '<div class="gcard"><div class="em">🌙</div><p>الليل... الكل يغمض عينه</p></div>';
