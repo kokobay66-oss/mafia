@@ -64,7 +64,7 @@ async function seatInfo(c,mx){
 async function newRoom(o){
   let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
   const ph=o.pass?await hash(c+':'+o.pass):null;
-  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,mode:o.mode,max:o.max,sorc:!!o.sorc,pwh:ph,createdAt:serverTimestamp()});
+      const q=await getDocs(query(collection(db,'rooms'),where('open','==',true),where('status','==','lobby'),where('mode','==',mode),limit(10)));
   await addMe(c,0);enter(c);
 }
 async function joinRoom(c,pw){
