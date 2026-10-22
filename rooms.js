@@ -69,7 +69,7 @@ async function newRoom(o){
 
   const ph = o.pass ? await hash(c + ':' + o.pass) : null;
   
-  // إنشاء وثيقة الغرفة بالبيانات الصحيحة وتفادي الأخطاء البرمجية
+  // هنا يتم إنشاء الغرفة رسمياً في قاعدة البيانات مع كل بياناتها وحمايتها
   await setDoc(doc(db, 'rooms', c), {
     host: X.me.uid,
     mode: o.mode,
