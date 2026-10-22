@@ -62,10 +62,28 @@ async function seatInfo(c,mx){
   return {seat,n:s.size};
 }
 async function newRoom(o){
-  let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
-  const ph=o.pass?await hash(c+':'+o.pass):null;
-      const q=await getDocs(query(collection(db,'rooms'),where('open','==',true),where('status','==','lobby'),where('mode','==',mode),limit(10)));
-  await addMe(c,0);enter(c);
+  let c;
+  do {
+    c = String(Math.floor(1000 + Math.random() * 9000));
+  } while ((await getDoc(doc(db, 'rooms', c))).exists());
+
+  const ph = o.pass ? await hash(c + ':' + o.pass) : null;
+  
+  // إنشاء وثيقة الغرفة بالبيانات الصحيحة وتفادي الأخطاء البرمجية
+  await setDoc(doc(db, 'rooms', c), {
+    host: X.me.uid,
+    mode: o.mode,
+    max: o.max,
+    pwh: ph,
+    public: o.pub,
+    sorc: o.sorc || false,
+    status: 'lobby',
+    createdAt: serverTimestamp()
+  });
+
+  await addMe(c, 0);
+  enter(c);
+}
 }
 async function joinRoom(c,pw){
   if(c.length!==4){custom('الكود 4 أرقام');return}
