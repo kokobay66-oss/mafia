@@ -37,7 +37,7 @@ const th=l=>{document.body.classList.toggle('light',l);A.classList.remove('fix')
 A.addEventListener('click',e=>{const t=e.target.closest?e.target.closest('[data-w]'):null;if(!t||!Me)return;const w=t.dataset.w;if(w==='av')Me.view();if(w==='coin')Me.coin();if(w==='gem')Me.charge()});
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
 const age=b=>{const [y,m,d]=b.split('-').map(Number),n=new Date();let a=n.getFullYear()-y;if(n<new Date(n.getFullYear(),m-1,d))a--;return a};
-const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const s=Math.min(i.width,i.height);c.getContext('2d').drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,128,128);r(c.toDataURL('image/jpeg',.8))};i.src=URL.createObjectURL(f)});
+const readImg=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const s=Math.min(i.width,i.height),z=Math.min(480,s),c=document.createElement('canvas');c.width=c.height=z;const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,z,z);r(c.toDataURL('image/jpeg',.9))};i.src=URL.createObjectURL(f)});
 const num=n=>Number(n||0).toLocaleString('en');
 const topbar=x=>'<div class="top"><div class="tl"><img class="av tav" data-w="av" src="'+esc(prof.photo)+'" alt=""><div class="coin" data-w="coin"><i class="ic ic-det"></i>'+num(prof.coins)+'</div><div class="coin" data-w="gem"><i class="ic ic-mafia"></i>'+num(prof.gems)+'<b class="plus">+</b></div></div>'+(x||'')+'</div>';
 const hdr=t=>'<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">'+t+'</h1><span style="width:44px"></span></div>';
