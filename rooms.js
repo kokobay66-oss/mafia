@@ -61,6 +61,7 @@ async function seatInfo(c,mx){
   let seat=-1;for(let i=0;i<mx;i++)if(!t.has(i)){seat=i;break}
   return {seat,n:s.size};
 }
+
 async function newRoom(o){
   let c;
   do {
@@ -69,22 +70,22 @@ async function newRoom(o){
 
   const ph = o.pass ? await hash(c + ':' + o.pass) : null;
   
-  // هنا يتم إنشاء الغرفة رسمياً في قاعدة البيانات مع كل بياناتها وحمايتها
   await setDoc(doc(db, 'rooms', c), {
     host: X.me.uid,
+    status: 'lobby',
+    public: o.pub,
+    open: !!o.pub || !ph,
     mode: o.mode,
     max: o.max,
+    sorc: !!o.sorc,
     pwh: ph,
-    public: o.pub,
-    sorc: o.sorc || false,
-    status: 'lobby',
     createdAt: serverTimestamp()
   });
 
   await addMe(c, 0);
   enter(c);
 }
-}
+
 async function joinRoom(c,pw){
   if(c.length!==4){custom('الكود 4 أرقام');return}
   try{
@@ -101,6 +102,7 @@ async function joinRoom(c,pw){
     await addMe(c,si.seat);enter(c);
   }catch(x){custom('مشكلة: '+x.code)}
 }
+
 export async function joinByInvite(c,ph){
   try{
     const s=await getDoc(doc(db,'rooms',c));
@@ -115,10 +117,11 @@ export async function joinByInvite(c,ph){
     await addMe(c,si.seat);enter(c);
   }catch(x){toast('مشكلة: '+x.code)}
 }
+
 export async function quick(mode){
   const e=$('e2');if(e)e.textContent='ندوّر لك على غرفة...';
   try{
-    const q=await getDocs(query(collection(db,'rooms'),where('public','==',true),where('status','==','lobby'),where('mode','==',mode),limit(10)));
+    const q=await getDocs(query(collection(db,'rooms'),where('open','==',true),where('status','==','lobby'),where('mode','==',mode),limit(10)));
     for(const d of q.docs){
       const r=d.data(),t=r.createdAt;
       if(t&&Date.now()-t.toMillis()>20*60000)continue;
@@ -128,6 +131,7 @@ export async function quick(mode){
     await newRoom({pub:true,mode,max:10,pass:''});
   }catch(x){if(e)e.textContent='مشكلة: '+x.code}
 }
+
 function enter(c){
   stopRoom();code=c;X.th(false);
   un.push(onSnapshot(doc(db,'rooms',c),s=>{
@@ -141,24 +145,29 @@ function enter(c){
     rchat=s.docs.map(d=>d.data()).reverse();renderChat();
   }));
 }
+
 function seatHTML(i){
   const p=players.find(x=>x.seat===i);
   if(!p)return '<div class="seatw"><div class="seat" data-seat="'+i+'">+</div><div class="sn"></div></div>';
   return '<div class="seatw"><div class="seat full'+(p.id===X.me.uid?' me':'')+'">'+(p.id===room.host?'<span class="crown">👑</span>':'')+'<img src="'+esc(p.photo)+'" alt=""></div><div class="sn">'+esc(p.name)+'</div></div>';
 }
+
 const col=a=>'<div class="col">'+a.map(seatHTML).join('')+'</div>';
 async function moveSeat(i){
   if(players.some(p=>p.seat===i))return;
   try{await updateDoc(doc(db,'rooms',code,'players',X.me.uid),{seat:i})}catch(e){toast('مشكلة: '+e.code)}
 }
+
 const rmsgs=()=>rchat.length?rchat.map(m=>'<div class="rmsg'+(m.from===X.me.uid?' mine':'')+'"><b>'+esc(m.name)+'</b> '+esc(m.text)+'</div>').join(''):'<div class="rmsg" style="opacity:.6">ابدأ الدردشة مع اللاعبين...</div>';
 function renderChat(){const el=$('rm');if(!el)return;el.innerHTML=rmsgs();el.scrollTop=el.scrollHeight}
+
 async function rsend(){
   const el=$('ri'),t=el.value.trim();
   if(!t)return;
   el.value='';
   try{await addDoc(collection(db,'rooms',code,'chat'),{from:X.me.uid,name:X.prof.name,text:t,at:serverTimestamp()})}catch(x){toast('مشكلة: '+x.code)}
 }
+
 function render(){
   if(!room||!code)return;
   const host=room.host===X.me.uid,mx=room.max||10,half=Math.ceil(mx/2),mode=room.mode||'classic';
@@ -183,6 +192,7 @@ function render(){
   const m=$('rm');m.scrollTop=m.scrollHeight;
   V.force(null);V.bind(toast);
 }
+
 async function leave(){
   const c=code,me=X.me.uid,host=room&&room.host===me,pub=room&&room.public,st=room&&room.status;
   const next=players.find(p=>p.id!==me);
