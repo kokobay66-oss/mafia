@@ -5,7 +5,7 @@ import * as V from "./voice.js";
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
 const GM=import('./game.js?'+Date.now()).catch(e=>{console.error(e);return null});
-let cm={mode:'classic',max:10,lock:false,sorc:false};
+let cm={mode:'classic',max:10,lock:false,sorc:false,maf:2,doc:true,det:true};
 const MINSTART=2; // للتجربة، لاحقًا 6
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
@@ -21,22 +21,26 @@ export function custom(msg,needPw,cv){
   const M=m=>'<button class="mode '+m+(cm.mode===m?' on':'')+'" data-m="'+m+'">'+tagName(m)+'</button>';
   X.A.innerHTML=X.topbar()+'<main style="justify-content:flex-start">'+
   '<div class="card c"><p>نوع الغرفة</p><div class="two">'+M('classic')+M('mad')+'</div>'+
-  '<div class="lk" id="sw" style="display:'+(cm.mode==='classic'?'block':'none')+'"><label><input type="checkbox" id="sc"'+(cm.sorc?' checked':'')+'> 🧙 تفعيل الساحر</label></div>'+
-  '<p>عدد اللاعبين</p><div class="step"><button id="smin">−</button><b id="sval">'+cm.max+'</b><button id="spl">+</button></div>'+
-  '<div class="lk"><label><input type="checkbox" id="lk"'+(cm.lock?' checked':'')+'> 🔒 كلمة سر للغرفة</label></div>'+
-  '<input id="pw" maxlength="12" placeholder="اكتب كلمة السر" style="display:'+(cm.lock?'block':'none')+'">'+
-  '<div class="err" id="ce"></div><button class="btn" id="c">إنشاء الغرفة</button></div>'+
-  '<div class="card c"><p>أو ادخل بكود الغرفة</p><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة" value="'+esc(cv||'')+'">'+(needPw?'<input id="jp" maxlength="12" placeholder="كلمة سر الغرفة">':'')+'<button class="btn alt" id="j" style="font-size:16px;padding:14px">انضم</button></div>'+
-  '<div class="err">'+esc(msg||'')+'</div><button class="btn ghost" id="bk">رجوع</button></main>';
+    '<p>عدد اللاعبين</p><div class="step"><button id="smin">−</button><b id="sval">'+cm.max+'</b><button id="spl">+</button></div>'+
+  '<div id="sw" style="display:'+(cm.mode==='classic'?'block':'none')+'"><p>الأدوار</p>'+
+  '<div class="rr"><img class="rimg" src="card-mafia.jpg" alt=""><div class="rin"><div class="t">المافيا</div><div class="step"><button id="mmin">−</button><b id="mval">'+cm.maf+'</b><button id="mpl">+</button></div></div></div>'+
+  '<div class="rr"><img class="rimg" src="card-doctor.jpg" alt=""><div class="rin"><div class="t">الطبيب</div></div><div class="chk'+(cm.doc?' on':'')+'" id="ck-doc">✓</div></div>'+
+  '<div class="rr"><img class="rimg" src="card-detective.jpg" alt=""><div class="rin"><div class="t">المحقق</div></div><div class="chk'+(cm.det?' on':'')+'" id="ck-det">✓</div></div>'+
+  '<div class="rr"><div class="remo">🧙</div><div class="rin"><div class="t">الساحر</div></div><div class="chk'+(cm.sorc?' on':'')+'" id="ck-sor">✓</div></div>'+
+  '</div>'+
   document.querySelectorAll('.mode[data-m]').forEach(b=>b.onclick=()=>{cm.mode=b.dataset.m;$('sw').style.display=cm.mode==='classic'?'block':'none';document.querySelectorAll('.mode[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
-  $('smin').onclick=()=>{cm.max=Math.max(6,cm.max-1);$('sval').textContent=cm.max};
-  $('spl').onclick=()=>{cm.max=Math.min(16,cm.max+1);$('sval').textContent=cm.max};
-  $('sc').onchange=e=>{cm.sorc=e.target.checked};
+    const fixM=()=>{cm.maf=Math.max(1,Math.min(cm.max>10?3:2,cm.maf));$('mval').textContent=cm.maf};
+  $('mmin').onclick=()=>{cm.maf--;fixM()};
+  $('mpl').onclick=()=>{cm.maf++;fixM()};
+  $('smin').onclick=()=>{cm.max=Math.max(6,cm.max-1);$('sval').textContent=cm.max;fixM()};
+  $('spl').onclick=()=>{cm.max=Math.min(16,cm.max+1);$('sval').textContent=cm.max;fixM()};
+  const tg=(id,k)=>{$(id).onclick=()=>{cm[k]=!cm[k];$(id).classList.toggle('on',cm[k])}};
+  tg('ck-doc','doc');tg('ck-det','det');tg('ck-sor','sorc');
   $('lk').onchange=e=>{cm.lock=e.target.checked;$('pw').style.display=cm.lock?'block':'none'};
   $('c').onclick=async()=>{
     const pw=cm.lock?$('pw').value.trim():'';
     if(cm.lock&&pw.length<3){$('ce').textContent='كلمة السر 3 أحرف على الأقل';return}
-    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc})}catch(x){$('ce').textContent='مشكلة: '+x.code}
+        try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,maf:cm.maf,doc:cm.doc,det:cm.det})}catch(x){$('ce').textContent='مشكلة: '+x.code}
   };
   $('j').onclick=()=>joinRoom($('cd').value.trim(),$('jp')?$('jp').value.trim():'');
   $('bk').onclick=()=>X.home();
@@ -70,7 +74,7 @@ async function newRoom(o){
 
   const ph = o.pass ? await hash(c + ':' + o.pass) : null;
   
-  await setDoc(doc(db, 'rooms', c), {
+    await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,open:!!o.pub||!ph,mode:o.mode,max:o.max,sorc:!!o.sorc,maf:o.maf||0,useDoc:o.doc!==false,useDet:o.det!==false,pwh:ph,createdAt:serverTimestamp()});
     host: X.me.uid,
     status: 'lobby',
     public: o.pub,
