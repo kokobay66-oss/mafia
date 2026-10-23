@@ -25,7 +25,8 @@ appId:"1:471485943029:web:fc182eab8df6ee3d7209bc"
 });
 const auth=getAuth(app),db=getFirestore(app);
 const SOC=import('./social.js?'+Date.now()).catch(e=>{console.error(e);return null});
-const ROO=import('./rooms.js?'+Date.now()).catch(e=>{console.error(e);return null});
+let rerr='';
+const ROO=import('./rooms.js?'+Date.now()).catch(e=>{console.error(e);rerr=String(e&&e.message||e);return null});
 const MEM=import('./me.js?'+Date.now()).catch(e=>{console.error(e);return null});
 const $=i=>document.getElementById(i),A=$('app');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -136,7 +137,7 @@ const b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<sm
 const mb=(Social?Social.badgeN():0);
 A.innerHTML=topbar('<div class="ics"><button class="ib mlb" id="ml2" data-n="'+mb+'">✉️</button><button class="ib" id="st">⚙️</button></div>')+'<div class="qa"><button class="qb" id="q1"><i>🏆</i>الرتبة</button><button class="qb" id="q2"><i>📋</i>المهام</button><button class="qb" id="q3"><i>👥</i>يلعب الأصدقاء</button></div><main><div class="logo" style="text-align:center;font-size:26px;margin-bottom:16px">🎭 مجلس المافيا</div>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
 bindNav();
-const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
+const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف: '+rerr);
 const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
 on('rc',R(()=>Rooms.quick('classic')));
 on('rm2',R(()=>Rooms.quick('mad')));
