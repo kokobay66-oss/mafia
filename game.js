@@ -1,5 +1,5 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getFirestore,doc,setDoc,updateDoc,collection,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,setDoc,updateDoc,collection,onSnapshot,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import * as V from "./voice.js";
 
 const db=getFirestore(getApp());
@@ -10,6 +10,7 @@ const PH={reveal:'كشف الأدوار',night:'الليل',dawn:'الفجر',ta
 const PR={mafia:'🔪 اضغط على اللاعب اللي تبون تقتلونه',doctor:'💉 اضغط على اللاعب اللي تبي تحميه',detective:'🕵️ اضغط على اللاعب اللي تشك فيه'};
 let X,C=null,room=null,players=[],me='',un=[],timer=null,iv=null,endAt=0,lastPt=-1,leaveFn=null,ren=null,dis=null;
 let myRole=null,acts=[],votes=[],sx='',sdone='',picked=null,H=null;
+let rec=null;const fnd=new Set(),svd=new Set();
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -78,6 +79,7 @@ async function endStep(){
   }
   if(H.st+1<H.steps.length)return nightStep(H.st+1);
   const v=H.victim,saved=!!v&&(H.save===v||H.revived),dead=[];
+  if(v&&H.save===v){const dd=H.alive.find(u=>H.roles[u]==='doctor');if(dd)await updateDoc(rr(dd),{sv:{r:rd,v}})}
   if(v&&!saved)dead.push(v);
   if(H.poison&&!dead.includes(H.poison))dead.push(H.poison);
   H.alive=H.alive.filter(u=>!dead.includes(u));
@@ -117,7 +119,12 @@ export function show(code,rm,pl,leave,rerender){
   if(C!==code){
     C=code;me=X.me.uid;
     const r=(...p)=>doc(db,'rooms',code,...p),c=n=>collection(db,'rooms',code,n);
-    un.push(onSnapshot(r('roles',me),s=>{myRole=s.exists()?s.data():null;draw()}));
+        un.push(onSnapshot(r('roles',me),s=>{
+      myRole=s.exists()?s.data():null;
+      if(myRole&&myRole.g&&myRole.res&&myRole.res.m)fnd.add(myRole.g+'_'+myRole.res.r);
+      if(myRole&&myRole.g&&myRole.sv)svd.add(myRole.g+'_'+myRole.sv.r);
+      draw();
+    }));
     un.push(onSnapshot(c('votes'),s=>{votes=s.docs.map(d=>({id:d.id,...d.data()}));draw()}));
     if(room.host===me)un.push(onSnapshot(c('acts'),s=>{acts=s.docs.map(d=>({id:d.id,...d.data()}));hostSkip()}));
   }
@@ -193,6 +200,17 @@ function middle(){
   return '<div class="gcard"><div class="em">'+(mw?'🔪':'🎉')+'</div><h2>'+(mw?'فازت المافيا':'فاز المواطنون')+'</h2></div><div class="gcard">'+Object.keys(f).map(u=>'<p style="color:#fff;margin:2px 0">'+R[f[u]][1]+' رقم '+no(u)+' '+nm(u)+' · '+R[f[u]][0]+(al(u)?'':' 💀')+'</p>').join('')+'</div>';
 }
 const res=()=>{const x=myRole&&myRole.res;return x&&x.r===room.rd?'<div class="gcard"><p>🕵️ نتيجة التحقيق: رقم '+no(x.t)+(x.m?' مافيا 🔪':' بريء 🙂')+'</p></div>':''};
+async function record(){
+  if(!room||!myRole||room.ph!=='end'||rec===room.g)return;
+  rec=room.g;
+  const r=myRole.role,g=room.g,won=(r==='mafia')===(room.win==='mafia');
+  const cnt=S=>[...S].filter(k=>k.startsWith(g+'_')).length;
+  const up={games:increment(1)};
+  if(won){up.wins=increment(1);if(r==='mafia')up.wMaf=increment(1);else up.wCit=increment(1)}
+  if(r==='detective'&&cnt(fnd))up.found=increment(Math.min(6,cnt(fnd)));
+  if(r==='doctor'&&cnt(svd))up.saves=increment(Math.min(6,cnt(svd)));
+  try{await setDoc(doc(db,'stats',me),up,{merge:true})}catch(e){console.error(e)}
+}
 function policy(){
   const ph=room.ph;
   const f=ph==='end'?null:!al(me)?'off':(ph==='reveal'||ph==='night')?'off':ph==='talk'?(room.spk===me?'on':'off'):null;
@@ -200,6 +218,7 @@ function policy(){
 }
 function draw(){
   if(!room||!C||!room.sm)return;
+  record();
   if(dis&&dis===room.g&&room.ph==='end')return;
   policy();
   const ph=room.ph,mx=room.max||10,half=Math.ceil(mx/2),by={};
