@@ -256,3 +256,14 @@ nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolu
 .rol{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:4px 16px}
 .rch{font-size:12px;color:#fff;background:rgba(255,255,255,.12);border-radius:12px;padding:3px 10px}
 .rch.off{opacity:.4;text-decoration:line-through}
+.ml1{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f0f0f4;cursor:pointer;color:#1d1a2b}
+.mdot{width:10px;height:10px;border-radius:50%;flex:none}
+.mdot.on{background:#f33}
+.mbd{flex:1;min-width:0;text-align:right}
+.mtt{font-weight:700}
+.msb{font-size:13px;color:#8a8aa0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.mtm{font-size:11px;color:#8a8aa0;align-self:flex-start}
+.rws{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.rwc{display:inline-flex;align-items:center;gap:4px;border:1px solid #e0def0;border-radius:12px;padding:3px 10px;font-weight:700;font-size:13px}
+.rws .cl{font-size:12px;color:#2fbf71}
+.mtx{color:var(--tx);line-height:1.8;white-space:pre-wrap;word-break:break-word}
