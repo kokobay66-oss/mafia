@@ -13,16 +13,18 @@ export function init(c){X=c}
 export function screen(){
   X.th(true);
   const p=X.prof,l=lvl();
-  const g=p.games||0,w=p.wins||0,pc=g?Math.round(w/g*100):0;
-  const st=[[g,'ألعاب'],[w,'فوز'],[pc+'%','نسبة الفوز']];
   X.A.innerHTML='<div class="meh" id="meh"><img class="mebg" src="'+esc(p.photo)+'" alt=""><div class="mer"><img class="mepic" src="'+esc(p.photo)+'" alt=""><div class="men"><div class="mnm">'+esc(p.name)+'</div><div class="lvr"><span>Lv.'+l.n+'</span><div class="lvb"><i style="width:'+Math.min(100,Math.round(l.xp/l.need*100))+'%"></i></div><span>'+l.xp+'/'+l.need+'</span></div></div><span class="chv">‹</span></div></div>'+
-    '<div class="list"><div class="stats">'+st.map(s=>'<div><b>'+s[0]+'</b><span>'+s[1]+'</span></div>').join('')+'</div>'+
+    '<div class="list"><div class="stats" id="sts"></div>'+
+    '<div class="ir" id="m-bd"><span class="k">🏅 الشارات</span><span class="v" id="bdn"></span></div><div class="sg"></div>'+
     '<div class="ir" id="m-mo"><span class="k">📸 لحظاتي</span><span class="v"></span></div><div class="sg"></div>'+
     '<div class="ir" id="m-vi"><span class="k">👀 الزوار</span><span class="v"></span></div></div>'+X.nav();
   X.bindNav();
   $('meh').onclick=()=>edit();
+  $('m-bd').onclick=()=>badges();
   $('m-mo').onclick=()=>moments();
   $('m-vi').onclick=()=>X.toast('الزوار قريبًا');
+  paintTiles();
+  loadStats().then(()=>{paintTiles();const e=$('bdn');if(e)e.textContent=BG.filter(isOn).length+'/'+BG.length});
 }
 /* نافذة سفلية للتعديل */
 function sheet(title,html){
@@ -432,4 +434,85 @@ function sendMail(){
       s.close();X.toast('انرسل البريد ✅');
     }catch(x){e('مشكلة: '+x.code)}
   };
+}
+/* ===== الشارات ===== */
+let ST={};
+async function loadStats(){
+  try{const s=await getDoc(doc(db,'stats',X.me.uid));ST=s.exists()?s.data():{}}catch(e){ST={}}
+  return ST;
+}
+function paintTiles(){
+  const e=$('sts');if(!e)return;
+  const g=ST.games||0,w=ST.wins||0,pc=g?Math.round(w/g*100):0;
+  e.innerHTML=[[g,'ألعاب'],[w,'فوز'],[pc+'%','نسبة الفوز']].map(s=>'<div><b>'+s[0]+'</b><span>'+s[1]+'</span></div>').join('');
+}
+const LK={o:['#e4e4ea','#7d7d88'],i:['#bdbdc6','#6b6b75'],rb:['#8f8f99','#5e5e68'],ic:'#f3f3f6',st:'#6b6b75',ln:'#4a4a52'};
+const BG=[
+ {id:'cit',name:'مواطن صالح',k:'shield',desc:'درع المدينة وضميرها، ما ينام وفي الحارة ظالم.',task:'فز 5 مرات مع فريق المواطنين',goal:5,val:()=>ST.wCit||0,
+  p:{o:['#8fd0ff','#1357c9'],i:['#4aa0ff','#0b3a9a'],rb:['#1a62d6','#0a3585'],ic:'#ffffff',st:'#0b3a8f',ln:'#082a6b'}},
+ {id:'det',name:'محقق خبير',k:'lens',desc:'عينه ما تغفل، وكل خيط عنده يوصل للجاني.',task:'اكشف 10 مافيا بالتحقيق',goal:10,val:()=>ST.found||0,
+  p:{o:['#fff3a6','#e0a400'],i:['#ffdc50','#c78800'],rb:['#e8b200','#966000'],ic:'#ffffff',st:'#7a4f00',ln:'#6b4500'}},
+ {id:'doc',name:'طبيب الحي',k:'cross',desc:'يسهر على أهل الحارة، وما يترك أحد للمصير.',task:'أنقذ 5 لاعبين من الاغتيال',goal:5,val:()=>ST.saves||0,
+  p:{o:['#9bffc4','#13a851'],i:['#3be887','#0b8a3d'],rb:['#16b85b','#087535'],ic:'#ffffff',st:'#075a2a',ln:'#054a22'}},
+ {id:'maf',name:'المافيا البارع',k:'hat',desc:'يضرب بصمت، ويختفي قبل لا يحس أحد.',task:'فز 5 مرات وأنت مافيا',goal:5,val:()=>ST.wMaf||0,
+  p:{o:['#ff8a8a','#a8101f'],i:['#e63a4a','#6b0612'],rb:['#c4162a','#5a0712'],ic:'#ffffff',st:'#4a0610',ln:'#3a0409'}},
+ {id:'boss',name:'زعيم المافيا',boss:true,k:'crown',desc:'التاج اللي ما يلبسه إلا من حكم الظلام. يبي كل الشارات، وفوز بعد فوز.',goal:1,val:()=>0,
+  p:{o:['#fff7b8','#f6c744','#9c6500'],i:['#ff4a5c','#8e0019','#3a0008'],rb:['#d4112b','#6a0013'],ic:'#ffd95a',st:'#5c3a00',ln:'#7a5200'}}
+];
+const n4=()=>BG.filter(b=>!b.boss&&b.val()>=b.goal).length;
+const isOn=b=>b.boss?(n4()===4&&(ST.wMaf||0)>=10):b.val()>=b.goal;
+const progOf=b=>b.boss?[{t:'افتح الشارات الأربع',v:n4(),g:4},{t:'فز 10 مرات كمافيا',v:ST.wMaf||0,g:10}]:[{t:b.task,v:b.val(),g:b.goal}];
+let _u=0;
+const grad=(id,a)=>'<linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1">'+a.map((c,i)=>'<stop offset="'+(i/(a.length-1))+'" stop-color="'+c+'"/>').join('')+'</linearGradient>';
+const SPK='<path d="M0-7L1.8-1.8L7 0L1.8 1.8L0 7L-1.8 1.8L-7 0L-1.8-1.8Z" fill="#fff"/>';
+function icon(k,f,s){
+  const ln='stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"';
+  if(k==='shield')return '<path d="M60 31L85 40V62C85 78 74 88 60 95C46 88 35 78 35 62V40Z" fill="'+f+'" '+ln+'/><path d="M47 62l9 9 17-19" fill="none" stroke="'+s+'" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';
+  if(k==='lens')return '<circle cx="54" cy="54" r="18" fill="rgba(255,255,255,.25)" stroke="'+f+'" stroke-width="8"/><path d="M68 68L87 87" stroke="'+f+'" stroke-width="10" stroke-linecap="round"/><path d="M45 48a11 11 0 0 1 9-7" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
+  if(k==='cross')return '<path d="M52 33h16v19h19v16H68v19H52V68H33V52h19Z" fill="'+f+'" '+ln+'/>';
+  if(k==='hat')return '<ellipse cx="60" cy="72" rx="34" ry="9" fill="'+f+'" '+ln+'/><path d="M43 70C43 48 50 38 60 38s17 10 17 32Z" fill="'+f+'" '+ln+'/><rect x="44" y="58" width="32" height="7" fill="'+s+'" opacity=".85"/>';
+  return '<path d="M32 82L37 46L52 63L60 38L68 63L83 46L88 82Z" fill="'+f+'" '+ln+'/><rect x="32" y="84" width="56" height="9" rx="2" fill="'+f+'" '+ln+'/><circle cx="37" cy="44" r="4" fill="'+f+'" '+ln+'/><circle cx="60" cy="36" r="4.5" fill="'+f+'" '+ln+'/><circle cx="83" cy="44" r="4" fill="'+f+'" '+ln+'/><circle cx="60" cy="68" r="5" fill="#ff3b4f" stroke="'+s+'" stroke-width="2"/>';
+}
+function badgeSVG(b,on,w){
+  const k='b'+(++_u),P=on?b.p:LK,boss=on&&b.boss;
+  const H='60,6 108,32 108,88 60,114 12,88 12,32',H2='60,16 99,38 99,82 60,104 21,82 21,38';
+  const edge=boss?'#ffd95a':P.ln;
+  return '<svg class="bdg'+(boss?' boss':'')+'" viewBox="0 0 120 140" width="'+w+'" height="'+Math.round(w*1.1667)+'" xmlns="http://www.w3.org/2000/svg"><defs>'+
+    grad('o'+k,P.o)+grad('i'+k,P.i)+grad('r'+k,P.rb)+
+    '<clipPath id="c'+k+'"><polygon points="'+H+'"/></clipPath></defs>'+
+    '<polygon points="36,98 24,136 44,123 58,138 62,102" fill="url(#r'+k+')" stroke="'+edge+'" stroke-width="2" stroke-linejoin="round"/>'+
+    '<polygon points="84,98 96,136 76,123 62,138 58,102" fill="url(#r'+k+')" stroke="'+edge+'" stroke-width="2" stroke-linejoin="round"/>'+
+    '<polygon points="'+H+'" fill="url(#o'+k+')" stroke="'+edge+'" stroke-width="3" stroke-linejoin="round"/>'+
+    '<polygon points="'+H2+'" fill="url(#i'+k+')" stroke="rgba(255,255,255,.6)" stroke-width="2"/>'+
+    '<polygon points="60,16 99,38 99,60 21,60 21,38" fill="#fff" opacity=".13"/>'+
+    (boss?'<polygon points="60,11 104,35 104,85 60,109 16,85 16,35" fill="none" stroke="#ffe58a" stroke-width="1.5" opacity=".9"/>':'')+
+    '<g transform="translate(0,-2)">'+icon(b.k,P.ic,P.st)+'</g>'+
+    (on?'<g clip-path="url(#c'+k+')"><g class="shn"><rect x="0" y="-10" width="26" height="170" fill="#fff" opacity=".42" transform="skewX(-20)"/></g></g>'+
+      (boss?'<g clip-path="url(#c'+k+')"><g class="shn s2"><rect x="0" y="-10" width="12" height="170" fill="#fff" opacity=".5" transform="skewX(-20)"/></g></g>':'')+
+      '<g transform="translate(16,24)"><g class="spk">'+SPK+'</g></g><g transform="translate(104,30)"><g class="spk s2">'+SPK+'</g></g><g transform="translate(96,100)"><g class="spk s3">'+SPK+'</g></g>'
+     :'<g transform="translate(92,94)"><circle r="13" fill="#2a2a30" stroke="#fff" stroke-opacity=".35"/><path d="M-5 0v-4a5 5 0 0 1 10 0v4" fill="none" stroke="#fff" stroke-width="2"/><rect x="-6.5" y="-1" width="13" height="10" rx="2" fill="#fff"/></g>')+
+    '</svg>';
+}
+function bdInfo(b){
+  const on=isOn(b);
+  sheet(esc(b.name),'<div class="bdi">'+badgeSVG(b,on,150)+'</div><p class="c">'+(on?'✨ مفتوحة':'🔒 مقفلة')+'</p><p class="c bdd">'+esc(b.desc)+'</p>'+
+    progOf(b).map(x=>'<div class="pg"><div class="pgt"><span>'+esc(x.t)+'</span><span>'+Math.min(x.v,x.g)+'/'+x.g+'</span></div><div class="pgb"><i style="width:'+Math.min(100,Math.round(x.v/x.g*100))+'%"></i></div></div>').join(''));
+}
+export function badges(){
+  X.th(false);
+  let tab='all';
+  const draw=()=>{
+    const g=$('bgg');if(!g)return;
+    const list=tab==='all'?BG:BG.filter(isOn);
+    g.innerHTML=list.length?list.map(b=>{const on=isOn(b);return '<div class="bgi'+(on?'':' lk')+'" data-b="'+b.id+'">'+badgeSVG(b,on,92)+'<span>'+esc(b.name)+'</span></div>'}).join(''):'<div class="empty" style="grid-column:1/-1;color:#d9c08a">ما فتحت شارات بعد، العب وكمّل المهام</div>';
+    g.querySelectorAll('[data-b]').forEach(e=>e.onclick=()=>bdInfo(BG.find(x=>x.id===e.dataset.b)));
+    const c=$('bgcn');if(c)c.textContent=BG.filter(isOn).length;
+  };
+  X.A.innerHTML='<div class="bgs"><div class="bgh"><button class="ib" id="bk">➜</button><h1>الشارات</h1><span style="width:44px"></span></div><div class="bgp"><img class="av big" src="'+esc(X.prof.photo)+'" alt=""><div><div class="bgn">'+esc(X.prof.name)+'</div><div class="bgc"><b id="bgcn">0</b>/'+BG.length+' شارة</div></div></div><div class="bgt"><button class="on" id="t1">كل الشارات</button><button id="t2">المفتوحة</button></div><div class="bgg" id="bgg"></div></div>';
+  $('bk').onclick=()=>screen();
+  const sw=t=>{tab=t;$('t1').classList.toggle('on',t==='all');$('t2').classList.toggle('on',t==='open');draw()};
+  $('t1').onclick=()=>sw('all');
+  $('t2').onclick=()=>sw('open');
+  draw();
+  loadStats().then(draw);
 }
