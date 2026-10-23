@@ -164,7 +164,12 @@ async function moveSeat(i){
 
 const rmsgs=()=>rchat.length?rchat.map(m=>'<div class="rmsg'+(m.from===X.me.uid?' mine':'')+'"><b>'+esc(m.name)+'</b> '+esc(m.text)+'</div>').join(''):'<div class="rmsg" style="opacity:.6">ابدأ الدردشة مع اللاعبين...</div>';
 function renderChat(){const el=$('rm');if(!el)return;el.innerHTML=rmsgs();el.scrollTop=el.scrollHeight}
-
+function rolesRow(){
+  if((room.mode||'classic')!=='classic')return '';
+  const mc=room.maf>0?room.maf:(players.length>=5?2:1);
+  const it=[['🔪','مافيا ×'+mc,true],['💉','الطبيب',room.useDoc!==false],['🕵️','المحقق',room.useDet!==false],['🧙','الساحر',!!room.sorc]];
+  return '<div class="rol">'+it.map(x=>'<span class="rch'+(x[2]?'':' off')+'">'+x[0]+' '+x[1]+'</span>').join('')+'</div>';
+}
 async function rsend(){
   const el=$('ri'),t=el.value.trim();
   if(!t)return;
@@ -181,7 +186,7 @@ function render(){
   const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART&&room.status!=='playing';
   X.A.classList.add('fix');
   X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
-  '<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
+    rolesRow()+'<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
   (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
   '<button class="btn alt" id="iv" style="font-size:15px;padding:12px">📨 دعوة</button></div>'+col(R(mx-half).map(i=>i+half))+'</div></div>'+
