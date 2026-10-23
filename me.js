@@ -1,5 +1,5 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getFirestore,collection,setDoc,getDoc,updateDoc,addDoc,deleteDoc,doc,query,where,orderBy,limit,getDocs,arrayUnion,arrayRemove,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,setDoc,getDoc,updateDoc,addDoc,deleteDoc,doc,query,where,orderBy,limit,getDocs,arrayUnion,arrayRemove,onSnapshot,writeBatch,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const db=getFirestore(getApp());
 let X;
 const $=i=>document.getElementById(i);
@@ -363,4 +363,73 @@ function compose(done){
     }catch(e){busy=false;b.textContent='نشر';draw();X.toast('مشكلة: '+(e.code||e.message))}
   };
   q('#ct').focus();
+}
+/* ===== البريد ===== */
+let mails=[],mU=null,isAdm=false;
+const hasRw=m=>(m.coins||0)>0||(m.gems||0)>0;
+const unreadN=()=>mails.filter(m=>!m.read||(hasRw(m)&&!m.claimed)).length;
+const rw=m=>(m.coins>0?'<span class="rwc"><i class="ic ic-det"></i>'+m.coins+'</span>':'')+(m.gems>0?'<span class="rwc"><i class="ic ic-mafia"></i>'+m.gems+'</span>':'');
+export function mailN(){return unreadN()}
+export function mailStop(){if(mU){mU();mU=null}mails=[];isAdm=false}
+export function mailStart(){
+  mailStop();
+  const u=X.me.uid;
+  mU=onSnapshot(collection(db,'users',u,'mail'),s=>{
+    mails=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ms(b.at)-ms(a.at));
+    const b=document.getElementById('ml2');if(b)b.dataset.n=unreadN();
+    if($('mlist'))paintMail();
+  },()=>{});
+  getDoc(doc(db,'admins',u)).then(s=>{isAdm=s.exists()}).catch(()=>{isAdm=false});
+}
+export function mail(){
+  X.th(true);
+  X.A.innerHTML='<div class="mh"><button class="ib" id="bk">➜</button><h1 style="font-size:22px">البريد</h1>'+(isAdm?'<button class="ib" id="ms1">✍️</button>':'<span style="width:44px"></span>')+'</div><div class="list" id="mlist"></div>';
+  $('bk').onclick=()=>X.home();
+  const sb=$('ms1');if(sb)sb.onclick=sendMail;
+  paintMail();
+}
+function paintMail(){
+  const el=$('mlist');if(!el)return;
+  el.innerHTML=mails.length?mails.map(m=>'<div class="ml1" data-k="'+m.id+'"><div class="mdot'+(m.read?'':' on')+'"></div><div class="mbd"><div class="mtt">'+esc(m.title||'رسالة')+'</div><div class="msb">'+esc((m.text||'').slice(0,60))+'</div>'+(hasRw(m)?'<div class="rws">'+rw(m)+(m.claimed?'<span class="cl">✓ تم الاستلام</span>':'')+'</div>':'')+'</div><div class="mtm">'+ago(m.at)+'</div></div>').join(''):'<div class="empty">ما فيه بريد<br>التنبيهات والجوائز توصلك هنا</div>';
+  el.querySelectorAll('[data-k]').forEach(r=>r.onclick=()=>openMail(r.dataset.k));
+}
+function openMail(id){
+  const m=mails.find(x=>x.id===id);if(!m)return;
+  if(!m.read)updateDoc(doc(db,'users',X.me.uid,'mail',id),{read:true}).catch(()=>{});
+  const canClaim=hasRw(m)&&!m.claimed;
+  const s=sheet(esc(m.title||'رسالة'),'<p class="mtx">'+esc(m.text||'')+'</p>'+(hasRw(m)?'<div class="rws" style="justify-content:center;margin:10px 0">'+rw(m)+'</div>':'')+(canClaim?'<button class="btn" id="mcl">🎁 استلام الجائزة</button>':'')+'<button class="btn ghost" id="mdl">🗑 حذف</button>');
+  const c=s.o.querySelector('#mcl');
+  if(c)c.onclick=async()=>{
+    c.disabled=true;
+    try{
+      const u=X.me.uid,b=writeBatch(db);
+      b.update(doc(db,'users',u),{coins:increment(m.coins||0),gems:increment(m.gems||0),lastClaim:id});
+      b.update(doc(db,'users',u,'mail',id),{claimed:true,read:true});
+      await b.commit();
+      X.prof.coins=(X.prof.coins||0)+(m.coins||0);
+      X.prof.gems=(X.prof.gems||0)+(m.gems||0);
+      s.close();X.toast('تم الاستلام 🎁');
+    }catch(e){c.disabled=false;X.toast('مشكلة: '+e.code)}
+  };
+  s.o.querySelector('#mdl').onclick=async()=>{
+    if(canClaim){X.toast('استلم الجائزة أول');return}
+    try{await deleteDoc(doc(db,'users',X.me.uid,'mail',id));s.close()}catch(e){X.toast('مشكلة: '+e.code)}
+  };
+}
+function sendMail(){
+  const s=sheet('إرسال بريد','<input id="sp1" inputmode="numeric" maxlength="6" placeholder="ID اللاعب (6 أرقام)"><input id="st1" maxlength="40" placeholder="العنوان"><input id="sx1" maxlength="300" placeholder="النص" style="text-align:right"><div class="two"><input id="sc1" inputmode="numeric" placeholder="عملة المحقق"><input id="sg1" inputmode="numeric" placeholder="عملة المافيا"></div><div class="err" id="se1"></div><button class="btn" id="ss1">إرسال</button>');
+  const q=i=>s.o.querySelector('#'+i);
+  q('ss1').onclick=async()=>{
+    const pid=q('sp1').value.trim(),title=q('st1').value.trim(),text=q('sx1').value.trim();
+    const coins=Math.max(0,Math.floor(+q('sc1').value||0)),gems=Math.max(0,Math.floor(+q('sg1').value||0));
+    const e=t=>q('se1').textContent=t;
+    if(!/^\d{6}$/.test(pid)){e('الـID 6 أرقام');return}
+    if(!title){e('اكتب العنوان');return}
+    try{
+      const t=await getDoc(doc(db,'ids',pid));
+      if(!t.exists()){e('ما لقيت لاعب بهذا الـID');return}
+      await addDoc(collection(db,'users',t.data().uid,'mail'),{title,text,coins,gems,claimed:false,read:false,from:'الإدارة',at:serverTimestamp()});
+      s.close();X.toast('انرسل البريد ✅');
+    }catch(x){e('مشكلة: '+x.code)}
+  };
 }
