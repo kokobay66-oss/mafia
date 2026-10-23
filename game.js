@@ -22,9 +22,10 @@ export function stop(){un.forEach(f=>f());un=[];clearTimeout(timer);clearInterva
 export async function start(code,pl,rm){
   try{
     const sorted=pl.slice().sort((a,b)=>a.seat-b.seat),ids=sorted.map(p=>p.id),n=ids.length,G=Date.now();
-    let rs=Array(n>=5?2:1).fill('mafia');
-    if(n>=3)rs.push('doctor');
-    if(n>=4)rs.push('detective');
+        const mc=rm.maf>0?Math.min(rm.maf,Math.max(1,Math.floor((n-1)/2))):(n>=5?2:1);
+    let rs=Array(mc).fill('mafia');
+    if(n>=3&&rm.useDoc!==false)rs.push('doctor');
+    if(n>=4&&rm.useDet!==false)rs.push('detective');
     if(rm.sorc&&n>=6)rs.push('sorcerer');
     while(rs.length<n)rs.push('citizen');
     shuffle(rs);
