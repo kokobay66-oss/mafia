@@ -132,7 +132,7 @@ A.innerHTML='<div class="mh"><h1>'+t[1]+'</h1></div><div class="list"><div class
 bindNav();return;
 }
 const b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
-A.innerHTML=topbar('<button class="ib" id="st">⚙️</button>')+'<div class="qa"><button class="qb" id="q1"><i>🏆</i>الرتبة</button><button class="qb" id="q2"><i>📋</i>المهام</button><button class="qb" id="q3"><i>👥</i>يلعب الأصدقاء</button></div><main><div class="logo" style="text-align:center;font-size:26px;margin-bottom:16px">🎭 مجلس المافيا</div>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
+A.innerHTML=topbar('<div class="ics"><button class="ib mlb" id="ml2" data-n="'+(Social?Social.badgeN():0)+'">✉️</button><button class="ib" id="st">⚙️</button></div>')
 bindNav();
 const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف، حدّث الصفحة');
 $('rc').onclick=R(()=>Rooms.quick('classic'));
@@ -143,6 +143,7 @@ $('q1').onclick=()=>toast('الرتبة قريبًا');
 $('q2').onclick=()=>toast('المهام قريبًا');
 $('q3').onclick=()=>toast('يلعب الأصدقاء قريبًا');
 $('st').onclick=()=>Me?Me.settings():toast('تعذر تحميل الإعدادات، حدّث الصفحة');
+$('ml2').onclick=()=>{tab='msg';shell()};
 }
 const ctx={A,esc,toast,th,hdr,topbar,nav:navHTML,bindNav,home:m=>shell(m),get me(){return me},get prof(){return prof},
 invite:(c,r,ids)=>Social?Social.inviteModal(c,r,ids):toast('تعذر تحميل الدعوات'),
