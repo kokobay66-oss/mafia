@@ -10,6 +10,8 @@ const cname=c=>{const f=C.find(x=>x[0]===c);return f?flag(c)+' '+f[1]:'غير م
 const gname=g=>g==='m'?'ذكر':g==='f'?'أنثى':'غير محدد';
 const lvl=()=>{const n=X.prof.lv||1,xp=X.prof.xp||0,need=n*100;return {n,xp,need}};
 export function init(c){X=c}
+
+/* تبويب أنا */
 export function screen(){
   X.th(true);
   const p=X.prof,l=lvl();
@@ -26,6 +28,7 @@ export function screen(){
   paintTiles();
   loadStats().then(()=>{paintTiles();const e=$('bdn');if(e)e.textContent=BG.filter(isOn).length+'/'+BG.length});
 }
+
 /* نافذة سفلية للتعديل */
 function sheet(title,html){
   const o=document.createElement('div');o.className='ov';
@@ -118,6 +121,7 @@ export function coin(){X.toast('عملة المحقق تكسبها من اللع
 export function charge(){
   sheet('شحن عملة المافيا','<p class="c" style="display:flex;justify-content:center;align-items:center;gap:6px">رصيدك: '+ico('mafia')+'<b>'+num(X.prof.gems)+'</b></p><div class="pks">'+[60,300,680,1500].map(n=>'<div class="pk">'+ico('mafia')+'<b>'+n+'</b><button class="mini" disabled>قريبًا</button></div>').join('')+'</div><p class="c" style="font-size:12px">الشحن بالدفع الحقيقي يتفعّل لما نربط نظام الدفع.</p>');
 }
+
 /* ===== اللحظات ===== */
 const PV={public:['🌐','عام'],friends:['👥','الأصدقاء فقط'],private:['🔒','خاص']};
 let mom=[],feed=[];
@@ -366,6 +370,7 @@ function compose(done){
   };
   q('#ct').focus();
 }
+
 /* ===== البريد ===== */
 let mails=[],mU=null,isAdm=false;
 const hasRw=m=>(m.coins||0)>0||(m.gems||0)>0;
@@ -435,142 +440,7 @@ function sendMail(){
     }catch(x){e('مشكلة: '+x.code)}
   };
 }
-<path d="M44 50C43 36 51 29 61 29C71 29 78 36 76 50C73 45 69 42 61 42C53 42 47 45 44 50Z" fill="#4a3322"/>
-<path d="M41 46C42 33 51 26 62 26C73 26 81 33 79 46C71 41 50 41 41 46Z" fill="#7b8db0" stroke="#27385a" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M41 46C52 43 70 43 79 46L83 49C70 46 50 46 37 49Z" fill="#4d5f85" stroke="#27385a" stroke-width="1.4" stroke-linejoin="round"/>
-<circle cx="62" cy="26" r="2" fill="#4d5f85"/><polygon points="${bstar(60,36.5,5.2,2.3)}" fill="#ffd54a" stroke="#8a5a00" stroke-width="1" stroke-linejoin="round"/>
-<path d="M62 27L62 40" stroke="#5d6f94" stroke-width="1" opacity=".6"/>
-${bEyes(54)}
-<path d="M48.5 48.5Q53 45.8 57.5 48" fill="none" stroke="#3b2a1c" stroke-width="1.9" stroke-linecap="round"/><path d="M62.5 48Q67 45.8 71.5 48.5" fill="none" stroke="#3b2a1c" stroke-width="1.9" stroke-linecap="round"/>
-${bNose}
-<path d="M53.5 65Q60 71 66.5 65" fill="#fff" stroke="#8a3d2d" stroke-width="1.8" stroke-linejoin="round"/>
-<circle cx="49" cy="60" r="3" fill="#ff8a7a" opacity=".3"/><circle cx="71" cy="60" r="3" fill="#ff8a7a" opacity=".3"/>
-`,
-det:()=>`
-<path d="M10 112C10 94 28 83 46 79L74 79C92 83 110 94 110 112Z" fill="#46546a" stroke="#1c2535" stroke-width="2"/>
-<path d="M60 80L44 112M60 80L76 112" stroke="#2f3b4e" stroke-width="2" fill="none"/>
-${bNeck}
-<path d="M51 78L60 96L69 78Z" fill="#f6f1e3" stroke="#a89b78" stroke-width="1"/>
-<path d="M57.5 80h5l1 10-3.5 7-3.5-7Z" fill="#7a1424" stroke="#3d0a12" stroke-width="1"/>
-<path d="M38 84L44 64L55 79L48 92Z" fill="#5f6f89" stroke="#1c2535" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M82 84L76 64L65 79L72 92Z" fill="#5f6f89" stroke="#1c2535" stroke-width="1.6" stroke-linejoin="round"/>
-<circle cx="47" cy="90" r="1.6" fill="#c9d3e3"/><circle cx="73" cy="90" r="1.6" fill="#c9d3e3"/>
-${bHead}
-<path d="M44 38 Q60 52 76 38 L77 47 Q60 59 43 47Z" fill="#000" opacity=".22"/>
-${bEyes(55)}
-<path d="M47.5 49.5L57.5 48" stroke="#2b1d14" stroke-width="2.2" stroke-linecap="round"/><path d="M62.5 48L72.5 49.5" stroke="#2b1d14" stroke-width="2.2" stroke-linecap="round"/>
-${bNose}
-<path d="M54.5 67Q60 68.5 66 65.5" fill="none" stroke="#7a3a2a" stroke-width="1.8" stroke-linecap="round"/>
-<g fill="#5a3a22" opacity=".18"><circle cx="50" cy="66" r="1"/><circle cx="53" cy="70" r="1"/><circle cx="60" cy="72" r="1"/><circle cx="67" cy="70" r="1"/><circle cx="70" cy="66" r="1"/></g>
-<g transform="rotate(-7 60 40)"><path d="M43 42C43 27 50 21 60 21C70 21 77 27 77 42Z" fill="#5b4631" stroke="#2a1d10" stroke-width="1.6"/><path d="M52 22Q60 30 68 22" fill="none" stroke="#2f2216" stroke-width="2"/><path d="M43 42C53 46 67 46 77 42L77 36C67 40 53 40 43 36Z" fill="#241a10"/><ellipse cx="60" cy="43" rx="28" ry="6.5" fill="#6b5640" stroke="#2a1d10" stroke-width="1.6"/></g>
-<circle cx="74" cy="64" r="13" fill="#bfeaff" fill-opacity=".38" stroke="#f0bf1a" stroke-width="4.2"/><circle cx="74" cy="64" r="13" fill="none" stroke="#7a5200" stroke-width="1" opacity=".6"/>
-<ellipse cx="72.5" cy="62.5" rx="6.6" ry="5" fill="#fff"/><circle cx="73.5" cy="62.5" r="3.4" fill="#2b1d14"/><circle cx="74.6" cy="61.3" r="1.1" fill="#fff"/>
-<path d="M66 58A10 10 0 0 1 74 52" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
-<path d="M83.5 73.5L92 83" stroke="#5e4010" stroke-width="6.5" stroke-linecap="round"/><path d="M83.5 73.5L92 83" stroke="#a9772b" stroke-width="3" stroke-linecap="round"/>`,
-doc:()=>`
-<path d="M10 112C10 94 28 83 46 79L74 79C92 83 110 94 110 112Z" fill="#f7f9f8" stroke="#6f8077" stroke-width="2"/>
-<path d="M60 80L46 112M60 80L74 112" stroke="#b9c6bf" stroke-width="2" fill="none"/>
-${bNeck}
-<path d="M50 78L60 100L70 78Z" fill="#16b765" stroke="#0a6b38" stroke-width="1.4" stroke-linejoin="round"/>
-<path d="M48 79C44 94 52 101 62 98" fill="none" stroke="#2c3a35" stroke-width="2.2" stroke-linecap="round"/>
-<circle cx="63.5" cy="97.5" r="3.4" fill="#cfd8d3" stroke="#2c3a35" stroke-width="1.5"/>
-${bHead}
-<path d="M43.5 49C42 33 51 27 60 27C69 27 78 33 76.5 49C72 43 69 41 60 41C51 41 48 43 43.5 49Z" fill="#1fbf6a" stroke="#0a6b38" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M43.5 47C52 44 68 44 76.5 47" fill="none" stroke="#0a6b38" stroke-width="1.2" opacity=".6"/>
-<circle cx="60" cy="36" r="6.2" fill="#d9e2de" stroke="#33423c" stroke-width="1.6"/><circle cx="60" cy="36" r="3.2" fill="#f4fbf8" stroke="#33423c" stroke-width="1"/><path d="M57.5 34.5A3 3 0 0 1 60 33" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
-${bEyes(55)}
-<circle cx="53" cy="55" r="5.4" fill="#cfeee0" fill-opacity=".28" stroke="#2c3a35" stroke-width="1.5"/><circle cx="67" cy="55" r="5.4" fill="#cfeee0" fill-opacity=".28" stroke="#2c3a35" stroke-width="1.5"/><path d="M58.4 54.5Q60 53.5 61.6 54.5" fill="none" stroke="#2c3a35" stroke-width="1.4"/>
-<path d="M47.5 49Q53 46.5 57 48.5" fill="none" stroke="#3b2a1c" stroke-width="1.8" stroke-linecap="round"/><path d="M63 48.5Q67 46.5 72.5 49" fill="none" stroke="#3b2a1c" stroke-width="1.8" stroke-linecap="round"/>
-${bNose}
-<path d="M54 65.5Q60 70.5 66 65.5" fill="#fff" stroke="#8a3d2d" stroke-width="1.7" stroke-linejoin="round"/>
-<circle cx="86" cy="62" r="15" fill="#5dff9a" opacity=".28"/><circle cx="86" cy="62" r="9" fill="#5dff9a" opacity=".25"/>
-<g transform="rotate(22 86 68)">
-<rect x="85.6" y="31" width="0.9" height="16" fill="#eaf3ee"/>
-<rect x="83.6" y="46" width="4.8" height="4" rx="1" fill="#9fb0a8" stroke="#46564f" stroke-width=".8"/>
-<rect x="81.5" y="50" width="9" height="28" rx="2" fill="#e6fff0" fill-opacity=".7" stroke="#0a5c2e" stroke-width="1.5"/>
-<rect x="83" y="58" width="6" height="19" rx="1" fill="#46ff8a"/><rect x="83" y="58" width="6" height="19" rx="1" fill="#0fb050" opacity=".35"/>
-<rect x="83" y="58" width="1.6" height="19" fill="#c9ffe0" opacity=".8"/>
-<path d="M81.5 56h3M81.5 62h3M81.5 68h3" stroke="#0a5c2e" stroke-width=".9"/>
-<rect x="78" y="77.5" width="16" height="3" rx="1" fill="#dfe9e3" stroke="#46564f" stroke-width=".8"/>
-<rect x="85" y="80.5" width="2" height="7" fill="#cfd8d3" stroke="#46564f" stroke-width=".6"/>
-<rect x="81" y="87" width="10" height="2.6" rx="1" fill="#dfe9e3" stroke="#46564f" stroke-width=".8"/>
-<circle cx="86" cy="29" r="1.5" fill="#5dff9a"/>
-</g>
-<ellipse cx="80" cy="70" rx="3.6" ry="5.2" fill="${BSK}" stroke="${BSL}" stroke-width="1.1" transform="rotate(22 80 70)"/><ellipse cx="91" cy="73" rx="3" ry="4.6" fill="${BSK}" stroke="${BSL}" stroke-width="1.1" transform="rotate(22 91 73)"/>`,
-maf:()=>`
-<path d="M10 112C10 94 28 83 46 79L74 79C92 83 110 94 110 112Z" fill="#1d1d26" stroke="#000" stroke-width="2"/>
-<path d="M30 112L40 90M90 112L80 90M22 112L33 88M98 112L87 88" stroke="#34343f" stroke-width="1.2"/>
-${bNeck}
-<path d="M51 78L60 96L69 78Z" fill="#f2f2f2" stroke="#999" stroke-width="1"/>
-<path d="M57 80h6l-1 6h-4Z" fill="#c4162a"/><path d="M58 86h4l3 15-5 6-5-6Z" fill="#a8101f" stroke="#5a0712" stroke-width="1"/>
-<path d="M44 80L52 77L58 98L44 104Z" fill="#2c2c38" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>
-<path d="M76 80L68 77L62 98L76 104Z" fill="#2c2c38" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>
-<path d="M78 92L86 90L85 97Z" fill="#fff" stroke="#bbb" stroke-width=".8"/>
-${bHead}
-<path d="M44 38 Q60 52 76 38 L77 47 Q60 59 43 47Z" fill="#000" opacity=".28"/>
-<path d="M44 53.5Q52 57 60 54Q68 57 76 53.5" fill="none" stroke="#000" stroke-width="1.2"/>
-<rect x="45" y="50" width="13.4" height="8.6" rx="3.8" fill="#0b0b10" stroke="#000" stroke-width="1"/><rect x="61.6" y="50" width="13.4" height="8.6" rx="3.8" fill="#0b0b10" stroke="#000" stroke-width="1"/>
-<path d="M47.5 52.5L51.5 52M64 52.5L68 52" stroke="#9aa" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
-<path d="M47 47.5L57.5 49" stroke="#2b1d14" stroke-width="2.2" stroke-linecap="round"/><path d="M62.5 49L73 47.5" stroke="#2b1d14" stroke-width="2.2" stroke-linecap="round"/>
-${bNose}
-<path d="M54 67Q60 70 66.5 64.5" fill="none" stroke="#7a3a2a" stroke-width="1.9" stroke-linecap="round"/>
-<path d="M69 55L72 63" stroke="#b86a58" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>
-<g transform="rotate(-14 62 67)"><rect x="62" y="65.4" width="17" height="3.8" rx="1.6" fill="#7a4a22" stroke="#3d2410" stroke-width=".8"/><rect x="64" y="65.4" width="2.4" height="3.8" fill="#d4a53a"/><circle cx="79.4" cy="67.3" r="2" fill="#ff6a2a"/><circle cx="79.4" cy="67.3" r="1" fill="#ffd27a"/></g>
-<path d="M82 62C84 58 80 55 83 51C85 48 82 46 84 43" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
-<path d="M42 42C42 26 50 21 60 21C70 21 78 26 78 42Z" fill="#17171d" stroke="#000" stroke-width="1.6"/><path d="M51 22Q60 31 69 22" fill="none" stroke="#000" stroke-width="2"/>
-<path d="M42 42C52 46 68 46 78 42L78 36C68 40 52 40 42 36Z" fill="#b8101f" stroke="#5a0712" stroke-width=".8"/>
-<ellipse cx="60" cy="43" rx="29" ry="7" fill="#101015" stroke="#000" stroke-width="1.6"/>
-<path d="M38 43C45 49 75 49 82 43" fill="none" stroke="#2c2c38" stroke-width="1" opacity=".8"/>`,
-boss:()=>`
-<path d="M8 112C8 94 28 83 46 79L74 79C92 83 112 94 112 112Z" fill="#14141a" stroke="#000" stroke-width="2"/>
-<path d="M28 112L40 90M92 112L80 90" stroke="#2b2b36" stroke-width="1.2"/>
-${bNeck}
-<path d="M50 78L60 98L70 78Z" fill="#fbfbfb" stroke="#aaa" stroke-width="1"/>
-<path d="M57 80h6l-1 6h-4Z" fill="#d4112b"/><path d="M58 86h4l3 15-5 6-5-6Z" fill="#d4112b" stroke="#6a0013" stroke-width="1"/>
-<path d="M43 80L52 77L58 99L43 104Z" fill="#23232d" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>
-<path d="M77 80L68 77L62 99L77 104Z" fill="#23232d" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>
-<path d="M46 100C50 106 70 106 74 100" fill="none" stroke="#ffd34a" stroke-width="2" stroke-dasharray="2 1.6"/>
-<circle cx="51" cy="91" r="3.8" fill="#d4112b" stroke="#6a0013" stroke-width="1"/><circle cx="51" cy="91" r="1.6" fill="#ff6b78"/><path d="M51 94.5L48 99" stroke="#18a04a" stroke-width="1.6" stroke-linecap="round"/><path d="M51 94.5L54 98" stroke="#18a04a" stroke-width="1.6" stroke-linecap="round"/>
-<path d="M78 90L87 88L86 96Z" fill="#fff" stroke="#bbb" stroke-width=".8"/>
-${bHead}
-<path d="M44 38 Q60 52 76 38 L77 47 Q60 59 43 47Z" fill="#000" opacity=".25"/>
-<rect x="45" y="50" width="13.4" height="8.6" rx="3.8" fill="#0b0b10" stroke="#ffd34a" stroke-width="1.6"/><rect x="61.6" y="50" width="13.4" height="8.6" rx="3.8" fill="#0b0b10" stroke="#ffd34a" stroke-width="1.6"/><path d="M58.4 53.5Q60 52.2 61.6 53.5" fill="none" stroke="#ffd34a" stroke-width="1.6"/>
-<path d="M47.5 52.5L51.5 52M64 52.5L68 52" stroke="#9aa" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
-<path d="M46.5 47L57.5 49" stroke="#2b2118" stroke-width="2.4" stroke-linecap="round"/><path d="M62.5 49L73.5 47" stroke="#2b2118" stroke-width="2.4" stroke-linecap="round"/>
-${bNose}
-<path d="M50 63C54 59 58 62 60 62C62 62 66 59 70 63C66 66 62 64 60 64C58 64 54 66 50 63Z" fill="#2b2118" stroke="#15100b" stroke-width=".8"/>
-<path d="M55 69Q60 71 65 69" fill="none" stroke="#7a3a2a" stroke-width="1.6" stroke-linecap="round"/>
-<g transform="rotate(-14 62 69)"><rect x="63" y="67.4" width="18" height="4" rx="1.7" fill="#7a4a22" stroke="#3d2410" stroke-width=".8"/><rect x="66" y="67.4" width="2.6" height="4" fill="#ffd34a"/><circle cx="81.4" cy="69.4" r="2.1" fill="#ff6a2a"/><circle cx="81.4" cy="69.4" r="1" fill="#ffd27a"/></g>
-<path d="M42 42C42 26 50 21 60 21C70 21 78 26 78 42Z" fill="#111116" stroke="#000" stroke-width="1.6"/><path d="M51 22Q60 31 69 22" fill="none" stroke="#000" stroke-width="2"/>
-<path d="M42 42C52 46 68 46 78 42L78 35C68 39 52 39 42 35Z" fill="#ffc933" stroke="#8a5a00" stroke-width=".9"/>
-<path d="M60 36L56 41L60 39L64 41Z" fill="#d4112b" stroke="#6a0013" stroke-width=".6"/><circle cx="60" cy="38.4" r="1.4" fill="#fff3a0"/>
-<ellipse cx="60" cy="43" rx="29" ry="7" fill="#0c0c10" stroke="#000" stroke-width="1.6"/>
-<path d="M36 43.5C44 50 76 50 84 43.5" fill="none" stroke="#ffd34a" stroke-width="1.3" opacity=".9"/>`
-};
-function badgeSVG(b,on,w){
-  const k='b'+(++_u),P=on?b.p:LK,boss=on&&b.boss;
-  const H='60,6 108,32 108,88 60,114 12,88 12,32',H2='60,16 99,38 99,82 60,104 21,82 21,38';
-  const edge=boss?'#ffd95a':P.ln;
-  return '<svg class="bdg'+(boss?' boss':'')+'" viewBox="0 -14 120 154" width="'+w+'" height="'+Math.round(w*154/120)+'" xmlns="http://www.w3.org/2000/svg"><defs>'+
-    grad('o'+k,P.o)+grad('i'+k,P.i)+grad('r'+k,P.rb)+
-    '<radialGradient id="s'+k+'" cx=".5" cy=".42" r=".55"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'+
-    '<filter id="f'+k+'"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope=".72"/><feFuncG type="linear" slope=".72"/><feFuncB type="linear" slope=".72"/></feComponentTransfer></filter>'+
-    '<clipPath id="c'+k+'"><polygon points="'+H+'"/></clipPath><clipPath id="p'+k+'"><polygon points="'+H2+'"/></clipPath></defs>'+
-    '<polygon points="36,98 24,136 44,123 58,138 62,102" fill="url(#r'+k+')" stroke="'+edge+'" stroke-width="2" stroke-linejoin="round"/>'+
-    '<polygon points="84,98 96,136 76,123 62,138 58,102" fill="url(#r'+k+')" stroke="'+edge+'" stroke-width="2" stroke-linejoin="round"/>'+
-    '<polygon points="'+H+'" fill="url(#o'+k+')" stroke="'+edge+'" stroke-width="3" stroke-linejoin="round"/>'+
-    '<polygon points="'+H2+'" fill="url(#i'+k+')" stroke="rgba(255,255,255,.6)" stroke-width="2"/>'+
-    '<g clip-path="url(#p'+k+')">'+(boss?'<g stroke="#ffd95a" stroke-width="2.4" opacity=".24">'+Array.from({length:16},(_,i)=>{const a=i*Math.PI/8;return '<path d="M60 56L'+(60+70*Math.cos(a)).toFixed(1)+' '+(56+70*Math.sin(a)).toFixed(1)+'"/>'}).join('')+'</g>':'')+'<circle cx="60" cy="56" r="44" fill="url(#s'+k+')"/><g'+(on?'':' filter="url(#f'+k+')" opacity=".62"')+'>'+PORT[b.id]()+'</g></g>'+
-    '<polygon points="'+H2+'" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1"/>'+
-    '<polygon points="60,16 99,38 99,56 21,56 21,38" fill="#fff" opacity=".1"/>'+
-    (boss?'<polygon points="60,11 104,35 104,85 60,109 16,85 16,35" fill="none" stroke="#ffe58a" stroke-width="1.5" opacity=".9"/>'+
-      '<path d="M40 10L43 -5L51 2L60 -11L69 2L77 -5L80 10Z" fill="url(#o'+k+')" stroke="#7a5200" stroke-width="1.6" stroke-linejoin="round"/><rect x="40" y="6" width="40" height="6" rx="1.5" fill="#f6c744" stroke="#7a5200" stroke-width="1.4"/><circle cx="43" cy="-6" r="2.4" fill="#d4112b" stroke="#6a0013" stroke-width=".8"/><circle cx="60" cy="-12" r="2.8" fill="#d4112b" stroke="#6a0013" stroke-width=".8"/><circle cx="77" cy="-6" r="2.4" fill="#d4112b" stroke="#6a0013" stroke-width=".8"/><circle cx="50" cy="9" r="1.6" fill="#d4112b"/><circle cx="60" cy="9" r="1.6" fill="#2d7bff"/><circle cx="70" cy="9" r="1.6" fill="#d4112b"/>':'')+
-    (on?'<g clip-path="url(#c'+k+')"><g class="shn"><rect x="0" y="-10" width="26" height="170" fill="#fff" opacity=".34" transform="skewX(-20)"/></g></g>'+
-      (boss?'<g clip-path="url(#c'+k+')"><g class="shn s2"><rect x="0" y="-10" width="12" height="170" fill="#fff" opacity=".45" transform="skewX(-20)"/></g></g>':'')+
-      '<g transform="translate(16,24)"><g class="spk">'+SPK+'</g></g><g transform="translate(104,30)"><g class="spk s2">'+SPK+'</g></g><g transform="translate(96,100)"><g class="spk s3">'+SPK+'</g></g>'
-     :'<g transform="translate(92,94)"><circle r="13" fill="#2a2a30" stroke="#fff" stroke-opacity=".35"/><path d="M-5 0v-4a5 5 0 0 1 10 0v4" fill="none" stroke="#fff" stroke-width="2"/><rect x="-6.5" y="-1" width="13" height="10" rx="2" fill="#fff"/></g>')+
-    '</svg>';
-}
+
 /* ===== الشارات ===== */
 let ST={};
 async function loadStats(){
