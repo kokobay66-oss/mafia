@@ -3,14 +3,14 @@ import {getFirestore,doc,setDoc,updateDoc,collection,onSnapshot,increment,server
 import * as V from "./voice.js";
 
 const db=getFirestore(getApp());
-const R={mafia:['مافيا','🔪'],doctor:['الطبيب','💉'],detective:['المحقق','🕵️'],sorcerer:['الساحر','🧙'],citizen:['مواطن','🙂']};
+const R={mafia:['مافيا','🔪'],doctor:['الطبيب','💉'],detective:['المحقق','🕵️'],sorcerer:['الساحر','🧙'],citizen:['مواطن','🙂'],sniper:['القناص','🎯'],joker:['الجوكر','🃏']};
 const CARDS=['mafia','doctor','detective','citizen'];
 const T={reveal:5,night:15,dawn:5,talk:40,disc:30,vote:15,vres:6,end:10};
 const PH={reveal:'كشف الأدوار',night:'الليل',dawn:'الفجر',talk:'وقت الكلام',disc:'النقاش المفتوح',vote:'التصويت',vres:'نتيجة التصويت',end:'النهاية'};
-const PR={mafia:'🔪 اضغط على اللاعب اللي تبون تقتلونه',doctor:'💉 اضغط على اللاعب اللي تبي تحميه',detective:'🕵️ اضغط على اللاعب اللي تشك فيه'};
+const PR={mafia:'🔪 اضغط على اللاعب اللي تبون تقتلونه',doctor:'💉 اضغط على اللاعب اللي تبي تحميه',detective:'🕵️ اضغط على اللاعب اللي تشك فيه',sniper:'🎯 رصاصة وحدة بس. اضغط على اللاعب اللي تبي تطلق عليه، أو لا تضغط وتحتفظ بها'};
 let X,C=null,room=null,players=[],me='',un=[],timer=null,iv=null,endAt=0,lastPt=-1,leaveFn=null,ren=null,dis=null;
 let myRole=null,acts=[],votes=[],sx='',sdone='',picked=null,H=null;
-let rec=null;const fnd=new Set(),svd=new Set();
+let rec=null;const fnd=new Set(),svd=new Set(),hit=new Set();
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -23,11 +23,15 @@ export function stop(){un.forEach(f=>f());un=[];clearTimeout(timer);clearInterva
 export async function start(code,pl,rm){
   try{
     const sorted=pl.slice().sort((a,b)=>a.seat-b.seat),ids=sorted.map(p=>p.id),n=ids.length,G=Date.now();
-        const mc=rm.maf>0?Math.min(rm.maf,Math.max(1,Math.floor((n-1)/2))):(n>=5?2:1);
+            const mad=rm.mode==='mad';
+    const mc=rm.maf>0?Math.min(rm.maf,Math.max(1,Math.floor((n-1)/2))):(n>=5?2:1);
     let rs=Array(mc).fill('mafia');
     if(n>=3&&rm.useDoc!==false)rs.push('doctor');
     if(n>=4&&rm.useDet!==false)rs.push('detective');
     if(rm.sorc&&n>=6)rs.push('sorcerer');
+    if((rm.useSnp||mad)&&n>=6)rs.push('sniper');
+    if(mad&&n>=5)rs.push('joker');
+    rs.length=Math.min(rs.length,n);
     while(rs.length<n)rs.push('citizen');
     shuffle(rs);
     const roles={};ids.forEach((u,i)=>roles[u]=rs[i]);
