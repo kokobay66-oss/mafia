@@ -297,3 +297,16 @@ nav button[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolu
 .pgt{display:flex;justify-content:space-between;font-size:13px;color:var(--tx)}
 .pgb{height:8px;border-radius:4px;background:rgba(255,255,255,.14);margin-top:4px;overflow:hidden}
 .pgb i{display:block;height:100%;background:linear-gradient(90deg,#ffd95a,#ff9a3c)}
+.bdw{position:relative;display:flex;align-items:center;justify-content:center}
+.bdw img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.bdw.lk img{filter:grayscale(1) brightness(.55) contrast(1.1);opacity:.78}
+.bsh{position:absolute;inset:0;pointer-events:none;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;background:linear-gradient(115deg,transparent 46%,rgba(255,255,255,.85) 50%,transparent 54%);background-size:300% 100%;mix-blend-mode:screen;animation:bsh 3.4s ease-in-out infinite}
+@keyframes bsh{0%{background-position:100% 0}55%,100%{background-position:0% 0}}
+.bdw.lk .bsh{display:none}
+.bdw em{position:absolute;width:13px;height:13px;background:#fff;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:tw 2.2s ease-in-out infinite}
+.sp1{left:10%;top:16%}
+.sp2{right:8%;top:30%}
+.sp3{left:30%;bottom:10%}
+.bl{position:absolute;right:2px;bottom:2px;width:26px;height:26px;border-radius:50%;background:#2a2a30;border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:13px}
+.bdw.g-boss.on{animation:glw 2.2s ease-in-out infinite alternate}
+.bdw.g-ldr.on{filter:drop-shadow(0 0 9px rgba(210,235,255,.75))}
