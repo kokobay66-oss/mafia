@@ -156,6 +156,30 @@ function rolesRow(){
   const it=[['🔪','مافيا ×'+mc,true],['💉','الطبيب',room.useDoc!==false],['🕵️','المحقق',room.useDet!==false],['🧙','الساحر',!!room.sorc]];
   return '<div class="rol">'+it.map(x=>'<span class="rch'+(x[2]?'':' off')+'">'+x[0]+' '+x[1]+'</span>').join('')+'</div>';
 }
+function sheet(title,html){
+  const o=document.createElement('div');o.className='ov';
+  o.innerHTML='<div class="sh"><div class="shh"><b>'+title+'</b><button class="mini" id="shx">✕</button></div>'+html+'</div>';
+  document.body.appendChild(o);
+  const close=()=>o.remove();
+  o.onclick=e=>{if(e.target===o||e.target.id==='shx')close()};
+  return {o,close};
+}
+function roomEdit(){
+  const lo=Math.max(6,...players.map(p=>p.seat+1));
+  const cls=(room.mode||'classic')==='classic';
+  let mx=room.max||10,mf=room.maf>0?room.maf:2;
+  const s=sheet('إعدادات الغرفة','<p>عدد اللاعبين</p><div class="step"><button id="em1">−</button><b id="emv">'+mx+'</b><button id="em2">+</button></div>'+(cls?'<p>عدد المافيا</p><div class="step"><button id="ef1">−</button><b id="efv">'+mf+'</b><button id="ef2">+</button></div>':'')+'<div class="err" id="ee"></div><button class="btn" id="es">حفظ</button>');
+  const q=i=>s.o.querySelector('#'+i);
+  const fix=()=>{mx=Math.max(lo,Math.min(16,mx));mf=Math.max(1,Math.min(mx>10?3:2,mf));q('emv').textContent=mx;if(cls)q('efv').textContent=mf};
+  q('em1').onclick=()=>{mx--;fix()};
+  q('em2').onclick=()=>{mx++;fix()};
+  if(cls){q('ef1').onclick=()=>{mf--;fix()};q('ef2').onclick=()=>{mf++;fix()}}
+  fix();
+  q('es').onclick=async()=>{
+    try{await updateDoc(doc(db,'rooms',code),cls?{max:mx,maf:mf}:{max:mx});s.close();toast('انحفظت الإعدادات ✅')}
+    catch(e){q('ee').textContent='مشكلة: '+e.code}
+  };
+}
 function render(){
   if(!room||!code)return;
   const host=room.host===X.me.uid,mx=room.max||10,half=Math.ceil(mx/2),mode=room.mode||'classic';
@@ -164,7 +188,7 @@ function render(){
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
   const R=n=>[...Array(n)].map((_,i)=>i),can=mode==='classic'&&players.length>=MINSTART&&room.status!=='playing';
   X.A.classList.add('fix');
-  X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
+  X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span>'+(host&&!room.public?'<button class="dots" id="rdt">•••</button>':'')+'</div>'+
   rolesRow()+'<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
   (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
@@ -173,6 +197,7 @@ function render(){
   document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
   if(host&&can)$('s').onclick=()=>Game?Game.start(code,players,room):toast('تعذر تحميل اللعبة');
   $('l').onclick=askLeave;
+    const rd=$('rdt');if(rd)rd.onclick=roomEdit;
   $('iv').onclick=()=>X.invite(code,room,players.map(p=>p.id));
   $('rs').onclick=rsend;
   $('ri').onkeydown=e=>{if(e.key==='Enter')rsend()};
