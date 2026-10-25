@@ -5,7 +5,7 @@ import * as V from "./voice.js";
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
 const GM=import('./game.js?'+Date.now()).catch(e=>{console.error(e);return null});
-let cm={mode:'classic',max:10,lock:false,sorc:false,maf:2,doc:true,det:true};
+let cm={mode:'classic',max:10,lock:false,sorc:false,maf:2,doc:true,det:true,snp:false};
 const MINSTART=2; // للتجربة، لاحقًا 6
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
@@ -27,6 +27,7 @@ export function custom(msg,needPw,cv){
   '<div class="rr"><img class="rimg" src="card-doctor.jpg" alt=""><div class="rin"><div class="t">الطبيب</div></div><div class="chk'+(cm.doc?' on':'')+'" id="ck-doc">✓</div></div>'+
   '<div class="rr"><img class="rimg" src="card-detective.jpg" alt=""><div class="rin"><div class="t">المحقق</div></div><div class="chk'+(cm.det?' on':'')+'" id="ck-det">✓</div></div>'+
   '<div class="rr"><div class="remo">🧙</div><div class="rin"><div class="t">الساحر</div></div><div class="chk'+(cm.sorc?' on':'')+'" id="ck-sor">✓</div></div>'+
+    '<div class="rr"><div class="remo">🎯</div><div class="rin"><div class="t">القناص</div></div><div class="chk'+(cm.snp?' on':'')+'" id="ck-snp">✓</div></div>'+
   '</div>'+
   '<div class="lk"><label><input type="checkbox" id="lk"'+(cm.lock?' checked':'')+'> 🔒 كلمة سر للغرفة</label></div>'+
   '<input id="pw" maxlength="12" placeholder="اكتب كلمة السر" style="display:'+(cm.lock?'block':'none')+'">'+
@@ -40,12 +41,12 @@ export function custom(msg,needPw,cv){
   $('smin').onclick=()=>{cm.max=Math.max(6,cm.max-1);$('sval').textContent=cm.max;fixM()};
   $('spl').onclick=()=>{cm.max=Math.min(16,cm.max+1);$('sval').textContent=cm.max;fixM()};
   const tg=(id,k)=>{$(id).onclick=()=>{cm[k]=!cm[k];$(id).classList.toggle('on',cm[k])}};
-  tg('ck-doc','doc');tg('ck-det','det');tg('ck-sor','sorc');
+  tg('ck-doc','doc');tg('ck-det','det');tg('ck-sor','sorc');tg('ck-snp','snp');
   $('lk').onchange=e=>{cm.lock=e.target.checked;$('pw').style.display=cm.lock?'block':'none'};
   $('c').onclick=async()=>{
     const pw=cm.lock?$('pw').value.trim():'';
     if(cm.lock&&pw.length<3){$('ce').textContent='كلمة السر 3 أحرف على الأقل';return}
-    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,maf:cm.maf,doc:cm.doc,det:cm.det})}catch(x){$('ce').textContent='مشكلة: '+x.code}
+    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,maf:cm.maf,doc:cm.doc,det:cm.detsnp:cm.mode==='classic'&&cm.snp})}catch(x){$('ce').textContent='مشكلة: '+x.code}
   };
   $('j').onclick=()=>joinRoom($('cd').value.trim(),$('jp')?$('jp').value.trim():'');
   $('bk').onclick=()=>X.home();
@@ -73,7 +74,7 @@ async function seatInfo(c,mx){
 async function newRoom(o){
   let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
   const ph=o.pass?await hash(c+':'+o.pass):null;
-  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,open:!!o.pub||!ph,mode:o.mode,max:o.max,sorc:!!o.sorc,maf:o.maf||0,useDoc:o.doc!==false,useDet:o.det!==false,pwh:ph,createdAt:serverTimestamp()});
+  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,open:!!o.pub||!ph,mode:o.mode,max:o.max,sorc:!!o.sorc,maf:o.maf||0,useDoc:o.doc!==false,useDet:o.det!==falseseSnpuseSnp:!!o.snp,,pwh:ph,createdAt:serverTimestamp()});
   await addMe(c,0);enter(c);
 }
 async function joinRoom(c,pw){
@@ -151,9 +152,10 @@ async function rsend(){
   try{await addDoc(collection(db,'rooms',code,'chat'),{from:X.me.uid,name:X.prof.name,text:t,at:serverTimestamp()})}catch(x){toast('مشكلة: '+x.code)}
 }
 function rolesRow(){
-  if((room.mode||'classic')!=='classic')return '';
+  const mad=(room.mode||'classic')==='mad';
   const mc=room.maf>0?room.maf:(players.length>=5?2:1);
-  const it=[['🔪','مافيا ×'+mc,true],['💉','الطبيب',room.useDoc!==false],['🕵️','المحقق',room.useDet!==false],['🧙','الساحر',!!room.sorc]];
+  const it=[['🔪','مافيا ×'+mc,true],['💉','الطبيب',room.useDoc!==false],['🕵️','المحقق',room.useDet!==false],['🧙','الساحر',!!room.sorc],['🎯','القناص',mad||!!room.useSnp]];
+  if(mad)it.push(['🃏','الجوكر',true]);
   return '<div class="rol">'+it.map(x=>'<span class="rch'+(x[2]?'':' off')+'">'+x[0]+' '+x[1]+'</span>').join('')+'</div>';
 }
 function sheet(title,html){
