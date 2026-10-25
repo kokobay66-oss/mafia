@@ -435,103 +435,6 @@ function sendMail(){
     }catch(x){e('مشكلة: '+x.code)}
   };
 }
-/* ===== الشارات ===== */
-let ST={};
-async function loadStats(){
-  try{const s=await getDoc(doc(db,'stats',X.me.uid));ST=s.exists()?s.data():{}}catch(e){ST={}}
-  return ST;
-}
-function paintTiles(){
-  const e=$('sts');if(!e)return;
-  const g=ST.games||0,w=ST.wins||0,pc=g?Math.round(w/g*100):0;
-  e.innerHTML=[[g,'ألعاب'],[w,'فوز'],[pc+'%','نسبة الفوز']].map(s=>'<div><b>'+s[0]+'</b><span>'+s[1]+'</span></div>').join('');
-}
-const LK={o:['#e4e4ea','#7d7d88'],i:['#bdbdc6','#6b6b75'],rb:['#8f8f99','#5e5e68'],ic:'#f3f3f6',st:'#6b6b75',ln:'#4a4a52'};
-const BG=[
- {id:'cit',name:'مواطن صالح',k:'shield',desc:'درع المدينة وضميرها، ما ينام وفي الحارة ظالم.',task:'فز 5 مرات مع فريق المواطنين',goal:5,val:()=>ST.wCit||0,
-  p:{o:['#8fd0ff','#1357c9'],i:['#4aa0ff','#0b3a9a'],rb:['#1a62d6','#0a3585'],ic:'#ffffff',st:'#0b3a8f',ln:'#082a6b'}},
- {id:'det',name:'محقق خبير',k:'lens',desc:'عينه ما تغفل، وكل خيط عنده يوصل للجاني.',task:'اكشف 10 مافيا بالتحقيق',goal:10,val:()=>ST.found||0,
-  p:{o:['#fff3a6','#e0a400'],i:['#ffdc50','#c78800'],rb:['#e8b200','#966000'],ic:'#ffffff',st:'#7a4f00',ln:'#6b4500'}},
- {id:'doc',name:'طبيب الحي',k:'cross',desc:'يسهر على أهل الحارة، وما يترك أحد للمصير.',task:'أنقذ 5 لاعبين من الاغتيال',goal:5,val:()=>ST.saves||0,
-  p:{o:['#9bffc4','#13a851'],i:['#3be887','#0b8a3d'],rb:['#16b85b','#087535'],ic:'#ffffff',st:'#075a2a',ln:'#054a22'}},
- {id:'maf',name:'المافيا البارع',k:'hat',desc:'يضرب بصمت، ويختفي قبل لا يحس أحد.',task:'فز 5 مرات وأنت مافيا',goal:5,val:()=>ST.wMaf||0,
-  p:{o:['#ff8a8a','#a8101f'],i:['#e63a4a','#6b0612'],rb:['#c4162a','#5a0712'],ic:'#ffffff',st:'#4a0610',ln:'#3a0409'}},
- {id:'boss',name:'زعيم المافيا',boss:true,k:'crown',desc:'التاج اللي ما يلبسه إلا من حكم الظلام. يبي كل الشارات، وفوز بعد فوز.',goal:1,val:()=>0,
-  p:{o:['#fff7b8','#f6c744','#9c6500'],i:['#ff4a5c','#8e0019','#3a0008'],rb:['#d4112b','#6a0013'],ic:'#ffd95a',st:'#5c3a00',ln:'#7a5200'}}
-];
-const n4=()=>BG.filter(b=>!b.boss&&b.val()>=b.goal).length;
-const isOn=b=>b.boss?(n4()===4&&(ST.wMaf||0)>=10):b.val()>=b.goal;
-const progOf=b=>b.boss?[{t:'افتح الشارات الأربع',v:n4(),g:4},{t:'فز 10 مرات كمافيا',v:ST.wMaf||0,g:10}]:[{t:b.task,v:b.val(),g:b.goal}];
-let _u=0;
-const grad=(id,a)=>'<linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1">'+a.map((c,i)=>'<stop offset="'+(i/(a.length-1))+'" stop-color="'+c+'"/>').join('')+'</linearGradient>';
-const SPK='<path d="M0-7L1.8-1.8L7 0L1.8 1.8L0 7L-1.8 1.8L-7 0L-1.8-1.8Z" fill="#fff"/>';
-function iconOld(k,f,s){
-  const ln='stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"';
-  if(k==='shield')return '<path d="M60 31L85 40V62C85 78 74 88 60 95C46 88 35 78 35 62V40Z" fill="'+f+'" '+ln+'/><path d="M47 62l9 9 17-19" fill="none" stroke="'+s+'" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';
-  if(k==='lens')return '<circle cx="54" cy="54" r="18" fill="rgba(255,255,255,.25)" stroke="'+f+'" stroke-width="8"/><path d="M68 68L87 87" stroke="'+f+'" stroke-width="10" stroke-linecap="round"/><path d="M45 48a11 11 0 0 1 9-7" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
-  if(k==='cross')return '<path d="M52 33h16v19h19v16H68v19H52V68H33V52h19Z" fill="'+f+'" '+ln+'/>';
-  if(k==='hat')return '<ellipse cx="60" cy="72" rx="34" ry="9" fill="'+f+'" '+ln+'/><path d="M43 70C43 48 50 38 60 38s17 10 17 32Z" fill="'+f+'" '+ln+'/><rect x="44" y="58" width="32" height="7" fill="'+s+'" opacity=".85"/>';
-  return '<path d="M32 82L37 46L52 63L60 38L68 63L83 46L88 82Z" fill="'+f+'" '+ln+'/><rect x="32" y="84" width="56" height="9" rx="2" fill="'+f+'" '+ln+'/><circle cx="37" cy="44" r="4" fill="'+f+'" '+ln+'/><circle cx="60" cy="36" r="4.5" fill="'+f+'" '+ln+'/><circle cx="83" cy="44" r="4" fill="'+f+'" '+ln+'/><circle cx="60" cy="68" r="5" fill="#ff3b4f" stroke="'+s+'" stroke-width="2"/>';
-}
-function badgeSVGOld(b,on,w){
-  const k='b'+(++_u),P=on?b.p:LK,boss=on&&b.boss;
-  const H='60,6 108,32 108,88 60,114 12,88 12,32',H2='60,16 99,38 99,82 60,104 21,82 21,38';
-  const edge=boss?'#ffd95a':P.ln;
-  return '<svg class="bdg'+(boss?' boss':'')+'" viewBox="0 0 120 140" width="'+w+'" height="'+Math.round(w*1.1667)+'" xmlns="http://www.w3.org/2000/svg"><defs>'+
-    grad('o'+k,P.o)+grad('i'+k,P.i)+grad('r'+k,P.rb)+
-    '<clipPath id="c'+k+'"><polygon points="'+H+'"/></clipPath></defs>'+
-    '<polygon points="36,98 24,136 44,123 58,138 62,102" fill="url(#r'+k+')" stroke="'+edge+'" stroke-width="2" stroke-linejoin="round"/>'+
-    '<polygon points="84,98 96,136 76,123 62,138 58,102" fill="url(#r'+k+')" stroke="'+edge+'" stroke-width="2" stroke-linejoin="round"/>'+
-    '<polygon points="'+H+'" fill="url(#o'+k+')" stroke="'+edge+'" stroke-width="3" stroke-linejoin="round"/>'+
-    '<polygon points="'+H2+'" fill="url(#i'+k+')" stroke="rgba(255,255,255,.6)" stroke-width="2"/>'+
-    '<polygon points="60,16 99,38 99,60 21,60 21,38" fill="#fff" opacity=".13"/>'+
-    (boss?'<polygon points="60,11 104,35 104,85 60,109 16,85 16,35" fill="none" stroke="#ffe58a" stroke-width="1.5" opacity=".9"/>':'')+
-    '<g transform="translate(0,-2)">'+icon(b.k,P.ic,P.st)+'</g>'+
-    (on?'<g clip-path="url(#c'+k+')"><g class="shn"><rect x="0" y="-10" width="26" height="170" fill="#fff" opacity=".42" transform="skewX(-20)"/></g></g>'+
-      (boss?'<g clip-path="url(#c'+k+')"><g class="shn s2"><rect x="0" y="-10" width="12" height="170" fill="#fff" opacity=".5" transform="skewX(-20)"/></g></g>':'')+
-      '<g transform="translate(16,24)"><g class="spk">'+SPK+'</g></g><g transform="translate(104,30)"><g class="spk s2">'+SPK+'</g></g><g transform="translate(96,100)"><g class="spk s3">'+SPK+'</g></g>'
-     :'<g transform="translate(92,94)"><circle r="13" fill="#2a2a30" stroke="#fff" stroke-opacity=".35"/><path d="M-5 0v-4a5 5 0 0 1 10 0v4" fill="none" stroke="#fff" stroke-width="2"/><rect x="-6.5" y="-1" width="13" height="10" rx="2" fill="#fff"/></g>')+
-    '</svg>';
-}
-function bdInfo(b){
-  const on=isOn(b);
-  sheet(esc(b.name),'<div class="bdi">'+badgeSVG(b,on,150)+'</div><p class="c">'+(on?'✨ مفتوحة':'🔒 مقفلة')+'</p><p class="c bdd">'+esc(b.desc)+'</p>'+
-    progOf(b).map(x=>'<div class="pg"><div class="pgt"><span>'+esc(x.t)+'</span><span>'+Math.min(x.v,x.g)+'/'+x.g+'</span></div><div class="pgb"><i style="width:'+Math.min(100,Math.round(x.v/x.g*100))+'%"></i></div></div>').join(''));
-}
-export function badges(){
-  X.th(false);
-  let tab='all';
-  const draw=()=>{
-    const g=$('bgg');if(!g)return;
-    const list=tab==='all'?BG:BG.filter(isOn);
-    g.innerHTML=list.length?list.map(b=>{const on=isOn(b);return '<div class="bgi'+(on?'':' lk')+'" data-b="'+b.id+'">'+badgeSVG(b,on,92)+'<span>'+esc(b.name)+'</span></div>'}).join(''):'<div class="empty" style="grid-column:1/-1;color:#d9c08a">ما فتحت شارات بعد، العب وكمّل المهام</div>';
-    g.querySelectorAll('[data-b]').forEach(e=>e.onclick=()=>bdInfo(BG.find(x=>x.id===e.dataset.b)));
-    const c=$('bgcn');if(c)c.textContent=BG.filter(isOn).length;
-  };
-  X.A.innerHTML='<div class="bgs"><div class="bgh"><button class="ib" id="bk">➜</button><h1>الشارات</h1><span style="width:44px"></span></div><div class="bgp"><img class="av big" src="'+esc(X.prof.photo)+'" alt=""><div><div class="bgn">'+esc(X.prof.name)+'</div><div class="bgc"><b id="bgcn">0</b>/'+BG.length+' شارة</div></div></div><div class="bgt"><button class="on" id="t1">كل الشارات</button><button id="t2">المفتوحة</button></div><div class="bgg" id="bgg"></div></div>';
-  $('bk').onclick=()=>screen();
-  const sw=t=>{tab=t;$('t1').classList.toggle('on',t==='all');$('t2').classList.toggle('on',t==='open');draw()};
-  $('t1').onclick=()=>sw('all');
-  $('t2').onclick=()=>sw('open');
-  draw();
-  loadStats().then(draw);
-}
-/* ===== رسومات الشارات ===== */
-const bstar=(cx,cy,R,r)=>{const p=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,q=i%2?r:R;p.push((cx+q*Math.cos(a)).toFixed(1)+','+(cy+q*Math.sin(a)).toFixed(1))}return p.join(' ')};
-const BSK='#f3c9a2',BSD='#d6a070',BSL='#7d4f2b';
-const bHead=`<ellipse cx="43.5" cy="54" rx="3.4" ry="5" fill="${BSK}" stroke="${BSL}" stroke-width="1.2"/><ellipse cx="76.5" cy="54" rx="3.4" ry="5" fill="${BSK}" stroke="${BSL}" stroke-width="1.2"/><ellipse cx="60" cy="53" rx="16.5" ry="19.5" fill="${BSK}" stroke="${BSL}" stroke-width="1.6"/><path d="M47 62 Q60 76 73 62 Q73 70 60 73 Q47 70 47 62Z" fill="${BSD}" opacity=".25"/>`;
-const bNeck=`<path d="M52 62h16v20H52z" fill="${BSD}" stroke="${BSL}" stroke-width="1.2"/>`;
-const bEyes=(y,c)=>`<ellipse cx="53" cy="${y}" rx="3.2" ry="2.6" fill="#fff"/><ellipse cx="67" cy="${y}" rx="3.2" ry="2.6" fill="#fff"/><circle cx="53.4" cy="${y+.2}" r="1.8" fill="${c||'#2b1d14'}"/><circle cx="67.4" cy="${y+.2}" r="1.8" fill="${c||'#2b1d14'}"/><circle cx="54" cy="${y-.6}" r=".6" fill="#fff"/><circle cx="68" cy="${y-.6}" r=".6" fill="#fff"/>`;
-const bNose=`<path d="M60 54 Q62.5 59 60 61.5" fill="none" stroke="${BSL}" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>`;
-const PORT={
-cit:()=>`
-<path d="M12 112C12 94 28 83 46 79L74 79C92 83 108 94 108 112Z" fill="#2e558f" stroke="#0c2550" stroke-width="2"/>
-<path d="M60 80L47 112M60 80L73 112" stroke="#1d3c6e" stroke-width="2" fill="none"/>
-${bNeck}
-<path d="M51 79L60 97L69 79L65 76L60 84L55 76Z" fill="#f4f6fb" stroke="#9fb0cc" stroke-width="1"/>
-<path d="M40 82L45 66L55 79L49 90Z" fill="#3d6aad" stroke="#0c2550" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M80 82L75 66L65 79L71 90Z" fill="#3d6aad" stroke="#0c2550" stroke-width="1.6" stroke-linejoin="round"/>
-${bHead}
 <path d="M44 50C43 36 51 29 61 29C71 29 78 36 76 50C73 45 69 42 61 42C53 42 47 45 44 50Z" fill="#4a3322"/>
 <path d="M41 46C42 33 51 26 62 26C73 26 81 33 79 46C71 41 50 41 41 46Z" fill="#7b8db0" stroke="#27385a" stroke-width="1.6" stroke-linejoin="round"/>
 <path d="M41 46C52 43 70 43 79 46L83 49C70 46 50 46 37 49Z" fill="#4d5f85" stroke="#27385a" stroke-width="1.4" stroke-linejoin="round"/>
@@ -667,4 +570,52 @@ function badgeSVG(b,on,w){
       '<g transform="translate(16,24)"><g class="spk">'+SPK+'</g></g><g transform="translate(104,30)"><g class="spk s2">'+SPK+'</g></g><g transform="translate(96,100)"><g class="spk s3">'+SPK+'</g></g>'
      :'<g transform="translate(92,94)"><circle r="13" fill="#2a2a30" stroke="#fff" stroke-opacity=".35"/><path d="M-5 0v-4a5 5 0 0 1 10 0v4" fill="none" stroke="#fff" stroke-width="2"/><rect x="-6.5" y="-1" width="13" height="10" rx="2" fill="#fff"/></g>')+
     '</svg>';
+}
+/* ===== الشارات ===== */
+let ST={};
+async function loadStats(){
+  try{const s=await getDoc(doc(db,'stats',X.me.uid));ST=s.exists()?s.data():{}}catch(e){ST={}}
+  return ST;
+}
+function paintTiles(){
+  const e=$('sts');if(!e)return;
+  const g=ST.games||0,w=ST.wins||0,pc=g?Math.round(w/g*100):0;
+  e.innerHTML=[[g,'ألعاب'],[w,'فوز'],[pc+'%','نسبة الفوز']].map(s=>'<div><b>'+s[0]+'</b><span>'+s[1]+'</span></div>').join('');
+}
+const BG=[
+ {id:'cit',name:'مواطن صالح',img:'bd-cit.webp',desc:'ضمير الحارة وعين أهلها. يوقف مع الحق ويحمي بيته.',task:'فز 5 مرات مع فريق المواطنين',goal:5,val:()=>ST.wCit||0},
+ {id:'doc',name:'المنقذ السري',img:'bd-doc.webp',desc:'يداوي بصمت وينقذ بلا ما يعرف أحد.',task:'أنقذ 5 لاعبين من الاغتيال',goal:5,val:()=>ST.saves||0},
+ {id:'det',name:'المحقق الذهبي',img:'bd-det.webp',desc:'كل خيط عنده ذهب، وكل لغز عنده حل.',task:'اكشف 10 مافيا بالتحقيق',goal:10,val:()=>ST.found||0},
+ {id:'maf',name:'مافيا الظلال',img:'bd-maf.webp',desc:'يمشي بين الظلال ويضرب بصمت.',task:'فز 5 مرات وأنت مافيا',goal:5,val:()=>ST.wMaf||0},
+ {id:'snp',name:'الرصاصة الصامتة',img:'bd-snp.webp',desc:'القناص: رصاصة وحدة، بدون صوت، وما تخطئ.',task:'اصطد 3 مافيا برصاصتك الصامتة',goal:3,val:()=>ST.snipes||0},
+ {id:'jok',name:'المراوغ',img:'bd-jok.webp',desc:'الجوكر: يخدع الجميع ويضحك آخر واحد. يظهر في الدموي.',task:'فز 3 مرات كجوكر',goal:3,val:()=>ST.jok||0},
+ {id:'ldr',name:'زعيم المواطنين',img:'bd-ldr.webp',lead:1,desc:'قائد أهل الحارة، يلتف الكل حول رايته.',task:'فز 200 مرة مع المواطنين',goal:200,val:()=>ST.wCit||0},
+ {id:'boss',name:'زعيم المافيا',img:'bd-boss.webp',lead:1,desc:'خيوط المدينة كلها بيده.',task:'فز 200 مرة وأنت مافيا',goal:200,val:()=>ST.wMaf||0}
+];
+const n6=()=>BG.slice(0,6).filter(b=>b.val()>=b.goal).length;
+const isOn=b=>b.lead?(n6()===6&&b.val()>=b.goal):b.val()>=b.goal;
+const progOf=b=>b.lead?[{t:'افتح الشارات الست الأولى',v:n6(),g:6},{t:b.task,v:b.val(),g:b.goal}]:[{t:b.task,v:b.val(),g:b.goal}];
+const bdImg=(b,on,w)=>'<div class="bdw g-'+b.id+(on?' on':' lk')+'" style="width:'+w+'px;height:'+Math.round(w*1.12)+'px"><img src="'+b.img+'" alt=""><i class="bsh" style="-webkit-mask-image:url('+b.img+');mask-image:url('+b.img+')"></i>'+(on?'<em class="sp1"></em><em class="sp2 s2"></em><em class="sp3 s3"></em>':'<span class="bl">🔒</span>')+'</div>';
+function bdInfo(b){
+  const on=isOn(b);
+  sheet(esc(b.name),'<div class="bdi">'+bdImg(b,on,170)+'</div><p class="c">'+(on?'✨ مفتوحة':'🔒 مقفلة')+'</p><p class="c bdd">'+esc(b.desc)+'</p>'+
+    progOf(b).map(x=>'<div class="pg"><div class="pgt"><span>'+esc(x.t)+'</span><span>'+Math.min(x.v,x.g)+'/'+x.g+'</span></div><div class="pgb"><i style="width:'+Math.min(100,Math.round(x.v/x.g*100))+'%"></i></div></div>').join(''));
+}
+export function badges(){
+  X.th(false);
+  let tab='all';
+  const draw=()=>{
+    const g=$('bgg');if(!g)return;
+    const list=tab==='all'?BG:BG.filter(isOn);
+    g.innerHTML=list.length?list.map(b=>{const on=isOn(b);return '<div class="bgi'+(on?'':' lk')+'" data-b="'+b.id+'">'+bdImg(b,on,96)+'<span>'+esc(b.name)+'</span></div>'}).join(''):'<div class="empty" style="grid-column:1/-1;color:#d9c08a">ما فتحت شارات بعد، العب وكمّل المهام</div>';
+    g.querySelectorAll('[data-b]').forEach(e=>e.onclick=()=>bdInfo(BG.find(x=>x.id===e.dataset.b)));
+    const c=$('bgcn');if(c)c.textContent=BG.filter(isOn).length;
+  };
+  X.A.innerHTML='<div class="bgs"><div class="bgh"><button class="ib" id="bk">➜</button><h1>الشارات</h1><span style="width:44px"></span></div><div class="bgp"><img class="av big" src="'+esc(X.prof.photo)+'" alt=""><div><div class="bgn">'+esc(X.prof.name)+'</div><div class="bgc"><b id="bgcn">0</b>/'+BG.length+' شارة</div></div></div><div class="bgt"><button class="on" id="t1">كل الشارات</button><button id="t2">المفتوحة</button></div><div class="bgg" id="bgg"></div></div>';
+  $('bk').onclick=()=>screen();
+  const sw=t=>{tab=t;$('t1').classList.toggle('on',t==='all');$('t2').classList.toggle('on',t==='open');draw()};
+  $('t1').onclick=()=>sw('all');
+  $('t2').onclick=()=>sw('open');
+  draw();
+  loadStats().then(draw);
 }
