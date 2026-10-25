@@ -35,9 +35,9 @@ export async function start(code,pl,rm){
     while(rs.length<n)rs.push('citizen');
     shuffle(rs);
     const roles={};ids.forEach((u,i)=>roles[u]=rs[i]);
-    const mafia=ids.filter(u=>roles[u]==='mafia'),steps=['mafia','doctor','detective','sorcerer'].filter(r=>rs.includes(r));
+    const mafia=ids.filter(u=>roles[u]==='mafia'),steps=['mafia','doctor','detective','sorcerer','sniper'].filter(r=>rs.includes(r));
     const sm={},nm={};sorted.forEach(p=>{sm[p.id]=p.seat;nm[p.id]=p.name});
-    H={C:code,G,roles,mafia,steps,sm,alive:ids.slice(),rd:1,st:0,pot:{kill:true,revive:true},victim:null,save:null,poison:null,revived:false,order:[],spi:0,pt:0,ph:'reveal',skipPt:-1};
+    H={C:code,G,roles,mafia,steps,sm,alive:ids.slice(),rd:1,st:0,{kill:true,revive:true},snp:true,sk:null,sd:null,victim:null,.,save:null,poison:null,revived:false,order:[],spi:0,pt:0,ph:'reveal',skipPt:-1};
     await Promise.all(ids.map(u=>setDoc(doc(db,'rooms',code,'roles',u),{role:roles[u],team:roles[u]==='mafia'?mafia:[],pot:roles[u]==='sorcerer'?{kill:true,revive:true}:null,g:G})));
     await go({status:'playing',ph:'reveal',g:G,sm,nm,steps,alive:ids,rd:1,st:0,msg:null,vout:null,win:null,fin:null,spk:null},T.reveal);
   }catch(e){X.toast('مشكلة: '+(e.code||e.message))}
@@ -61,7 +61,7 @@ async function next(){
 const win=()=>{const m=H.alive.filter(u=>H.roles[u]==='mafia').length;return m===0?'citizens':(m>=H.alive.length-m?'mafia':null)};
 const finish=(w,x)=>go({ph:'end',win:w,fin:H.roles,alive:H.alive,spk:null,...x},T.end);
 const nightStep=st=>{H.st=st;return go({ph:'night',st,rd:H.rd,spk:null},T.night)};
-const newNight=()=>{H.victim=H.save=H.poison=null;H.revived=false;return nightStep(0)};
+const newNight=()=>{H.victim=H.save=H.poison=H.sk=H.sd=null;H.revived=false;return nightStep(0)};
 async function endStep(){
   const role=H.steps[H.st],rd=H.rd,rr=u=>doc(db,'rooms',H.C,'roles',u);
   const as=acts.filter(a=>a.g===H.G&&a.k==='n'&&a.r===rd&&a.ro===role&&H.alive.includes(a.id)&&H.roles[a.id]===role);
@@ -81,13 +81,24 @@ async function endStep(){
       await updateDoc(rr(a.id),{pot:{...H.pot}});
     }
   }
+    if(role==='sniper'){
+    const a=as[0];
+    if(a&&H.snp&&H.alive.includes(a.t)&&a.t!==a.id){
+      H.snp=false;
+      const ok=H.roles[a.t]==='mafia';
+      if(ok)H.sk=a.t;else H.sd=a.id;
+      await updateDoc(rr(a.id),ok?{bul:false,hit:{r:rd}}:{bul:false});
+    }
+    }
   if(H.st+1<H.steps.length)return nightStep(H.st+1);
   const v=H.victim,saved=!!v&&(H.save===v||H.revived),dead=[];
   if(v&&H.save===v){const dd=H.alive.find(u=>H.roles[u]==='doctor');if(dd)await updateDoc(rr(dd),{sv:{r:rd,v}})}
   if(v&&!saved)dead.push(v);
   if(H.poison&&!dead.includes(H.poison))dead.push(H.poison);
+    if(H.sk&&!dead.includes(H.sk))dead.push(H.sk);
+  if(H.sd&&!dead.includes(H.sd))dead.push(H.sd);
   H.alive=H.alive.filter(u=>!dead.includes(u));
-  const msg={ok:!!v&&!saved,v:v&&!saved?v:null,p:H.poison};
+    const msg={ok:!!v&&!saved,v:v&&!saved?v:null,p:H.poison,sn:H.sk,sb:H.sd};
   const w=win();
   if(w)return finish(w,{msg});
   return go({ph:'dawn',alive:H.alive,msg,spk:null},T.dawn);
@@ -113,6 +124,7 @@ async function tally(){
   const out=top.length===1&&m>skip?top[0]:null;
   if(out)H.alive=H.alive.filter(u=>u!==out);
   const vout=out?{u:out,role:H.roles[out]}:null,w=win();
+    if(out&&H.roles[out]==='joker')return finish('joker',{vout});
   if(w)return finish(w,{vout});
   return go({ph:'vres',alive:H.alive,vout,spk:null},T.vres);
 }
@@ -127,6 +139,7 @@ export function show(code,rm,pl,leave,rerender){
       myRole=s.exists()?s.data():null;
       if(myRole&&myRole.g&&myRole.res&&myRole.res.m)fnd.add(myRole.g+'_'+myRole.res.r);
       if(myRole&&myRole.g&&myRole.sv)svd.add(myRole.g+'_'+myRole.sv.r);
+                if(myRole&&myRole.g&&myRole.hit)hit.add(myRole.g+'_'+myRole.hit.r);
       draw();
     }));
     un.push(onSnapshot(c('votes'),s=>{votes=s.docs.map(d=>({id:d.id,...d.data()}));draw()}));
@@ -148,6 +161,7 @@ function canPick(u){
     if(r==='doctor')return true;
     if(r==='detective')return u!==me;
     if(r==='sorcerer')return sx==='kill'&&u!==me;
+    if(r==='sniper')return u!==me&&myRole.bul!==false;
   }
   return room.ph==='vote'&&u!==me;
 }
@@ -175,7 +189,8 @@ function middle(){
     const mates=r==='mafia'?myRole.team.filter(u=>u!==me).map(u=>'رقم '+no(u)+' '+nm(u)).join('، '):'';
     const mt=mates?'<p>شريكك: '+mates+'</p>':'';
     if(CARDS.includes(r))return '<div class="gcard" style="padding:0;background:none;border:0"><img src="card-'+r+'.jpg" alt="'+rl[0]+'" style="display:block;width:100%;max-width:190px;height:auto;margin:0 auto;border-radius:12px;box-shadow:0 0 18px rgba(0,0,0,.7)">'+mt+'</div>';
-    return '<div class="gcard"><p>دورك</p><div class="em">'+rl[1]+'</div><h2>'+rl[0]+'</h2>'+mt+'</div>';
+        const HN={sniper:'عندك رصاصة وحدة بالليل. تصيب مافيا تموته، وتخطئ تموت أنت',joker:'هدفك تنطرد بالتصويت. إذا انطردت تفوز لحالك'};
+    return '<div class="gcard"><p>دورك</p><div class="em">'+rl[1]+'</div><h2>'+rl[0]+'</h2>'+(HN[r]?'<p>'+HN[r]+'</p>':'')+mt+'</div>';
   }
   if(ph==='night'){
     if(!iAlive)return ghost;
@@ -201,19 +216,22 @@ function middle(){
     return '<div class="gcard"><div class="em">'+(o?R[o.role][1]:'⚖️')+'</div><h2>'+(o?'تم إقصاء رقم '+no(o.u):'ما انطرد أحد')+'</h2><p>'+(o?nm(o.u)+' · كان '+R[o.role][0]:'')+'</p></div>';
   }
   const f=room.fin||{},mw=room.win==='mafia';
-  return '<div class="gcard"><div class="em">'+(mw?'🔪':'🎉')+'</div><h2>'+(mw?'فازت المافيا':'فاز المواطنون')+'</h2></div><div class="gcard">'+Object.keys(f).map(u=>'<p style="color:#fff;margin:2px 0">'+R[f[u]][1]+' رقم '+no(u)+' '+nm(u)+' · '+R[f[u]][0]+(al(u)?'':' 💀')+'</p>').join('')+'</div>';
+  return '<div class="gcard"><div class="em">+'(jw?'🃏':mw?'🔪':'🎉')+'،</div><h2>'+(jw?'فاز الجوكر!':mw?'فازت المافيا':'فاز المواطنون')+'</h2></div><div class="gcard">'+Object.keys(f).map(u=>'<p style="color:#fff;margin:2px 0">'+R[f[u]][1]+' رقم '+no(u)+' '+nm(u)+' · '+R[f[u]][0]+(al(u)?'':' 💀')+'</p>').join('')+'</div>';
 }
 const res=()=>{const x=myRole&&myRole.res;return x&&x.r===room.rd?'<div class="gcard"><p>🕵️ نتيجة التحقيق: رقم '+no(x.t)+(x.m?' مافيا 🔪':' بريء 🙂')+'</p></div>':''};
 async function record(){
   if(!room||!myRole||room.ph!=='end'||rec===room.g)return;
   rec=room.g;
-  const r=myRole.role,g=room.g,won=(r==='mafia')===(room.win==='mafia');
+  const r=myRole.role,g=room.g,jw=room.win==='joker';
+  const won=jw?r==='joker':(r!=='joker'&&(r==='mafia')===(room.win==='mafia'));
   const cnt=S=>[...S].filter(k=>k.startsWith(g+'_')).length;
   const up={games:increment(1)};
-  if(won){up.wins=increment(1);if(r==='mafia')up.wMaf=increment(1);else up.wCit=increment(1)}
+  if(won){up.wins=increment(1);if(r==='mafia')up.wMaf=increment(1);else if(r==='joker')up.jok=increment(1);else up.wCit=increment(1)}
   if(r==='detective'&&cnt(fnd))up.found=increment(Math.min(6,cnt(fnd)));
   if(r==='doctor'&&cnt(svd))up.saves=increment(Math.min(6,cnt(svd)));
+  if(r==='sniper'&&cnt(hit))up.snipes=increment(1);
   try{await setDoc(doc(db,'stats',me),up,{merge:true})}catch(e){console.error(e)}
+}
 }
 function policy(){
   const ph=room.ph;
