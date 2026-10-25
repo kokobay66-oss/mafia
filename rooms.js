@@ -7,6 +7,7 @@ let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
 const GM=import('./game.js?'+Date.now()).catch(e=>{console.error(e);return null});
 let cm={mode:'classic',max:10,lock:false,sorc:false,maf:2,doc:true,det:true,snp:false};
 const MINSTART=2; // للتجربة، لاحقًا 6
+const MAD_OPEN=true; // false = يقفل وضع الدموي (قريبًا)
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
 const toast=m=>X.toast(m);
@@ -27,7 +28,7 @@ export function custom(msg,needPw,cv){
   '<div class="rr"><img class="rimg" src="card-doctor.jpg" alt=""><div class="rin"><div class="t">الطبيب</div></div><div class="chk'+(cm.doc?' on':'')+'" id="ck-doc">✓</div></div>'+
   '<div class="rr"><img class="rimg" src="card-detective.jpg" alt=""><div class="rin"><div class="t">المحقق</div></div><div class="chk'+(cm.det?' on':'')+'" id="ck-det">✓</div></div>'+
   '<div class="rr"><div class="remo">🧙</div><div class="rin"><div class="t">الساحر</div></div><div class="chk'+(cm.sorc?' on':'')+'" id="ck-sor">✓</div></div>'+
-    '<div class="rr"><div class="remo">🎯</div><div class="rin"><div class="t">القناص</div></div><div class="chk'+(cm.snp?' on':'')+'" id="ck-snp">✓</div></div>'+
+  '<div class="rr"><div class="remo">🎯</div><div class="rin"><div class="t">القناص</div></div><div class="chk'+(cm.snp?' on':'')+'" id="ck-snp">✓</div></div>'+
   '</div>'+
   '<div class="lk"><label><input type="checkbox" id="lk"'+(cm.lock?' checked':'')+'> 🔒 كلمة سر للغرفة</label></div>'+
   '<input id="pw" maxlength="12" placeholder="اكتب كلمة السر" style="display:'+(cm.lock?'block':'none')+'">'+
@@ -46,7 +47,7 @@ export function custom(msg,needPw,cv){
   $('c').onclick=async()=>{
     const pw=cm.lock?$('pw').value.trim():'';
     if(cm.lock&&pw.length<3){$('ce').textContent='كلمة السر 3 أحرف على الأقل';return}
-    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,maf:cm.maf,doc:cm.doc,det:cm.detsnp:cm.mode==='classic'&&cm.snp})}catch(x){$('ce').textContent='مشكلة: '+x.code}
+    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,snp:cm.mode==='classic'&&cm.snp,maf:cm.maf,doc:cm.doc,det:cm.det})}catch(x){$('ce').textContent='مشكلة: '+x.code}
   };
   $('j').onclick=()=>joinRoom($('cd').value.trim(),$('jp')?$('jp').value.trim():'');
   $('bk').onclick=()=>X.home();
@@ -74,7 +75,7 @@ async function seatInfo(c,mx){
 async function newRoom(o){
   let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
   const ph=o.pass?await hash(c+':'+o.pass):null;
-  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,open:!!o.pub||!ph,mode:o.mode,max:o.max,sorc:!!o.sorc,maf:o.maf||0,useDoc:o.doc!==false,useDet:o.det!==falseseSnpuseSnp:!!o.snp,,pwh:ph,createdAt:serverTimestamp()});
+  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,open:!!o.pub||!ph,mode:o.mode,max:o.max,sorc:!!o.sorc,useSnp:!!o.snp,maf:o.maf||0,useDoc:o.doc!==false,useDet:o.det!==false,pwh:ph,createdAt:serverTimestamp()});
   await addMe(c,0);enter(c);
 }
 async function joinRoom(c,pw){
@@ -188,18 +189,18 @@ function render(){
   if(room.status==='playing'&&!(Game&&Game.closed(room))){X.A.classList.remove('fix');if(Game)Game.show(code,room,players,askLeave,render);return}
   if(Game&&room.status!=='playing')Game.stop();
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
-  const R=n=>[...Array(n)].map((_,i)=>i),can=players.length>=MINSTART&&room.status!=='playing'
+  const R=n=>[...Array(n)].map((_,i)=>i),can=(mode==='classic'||MAD_OPEN)&&players.length>=MINSTART&&room.status!=='playing';
   X.A.classList.add('fix');
   X.A.innerHTML=X.topbar('<button class="lv" id="l">خروج ✕</button>')+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span>'+(host&&!room.public?'<button class="dots" id="rdt">•••</button>':'')+'</div>'+
   rolesRow()+'<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
-  (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':'')+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
+  (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'&&!MAD_OPEN?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
   '<button class="btn alt" id="iv" style="font-size:15px;padding:12px">📨 دعوة</button></div>'+col(R(mx-half).map(i=>i+half))+'</div></div>'+
   '<div class="rc dock"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb">'+V.html()+'<input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div>';
   document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
   if(host&&can)$('s').onclick=()=>Game?Game.start(code,players,room):toast('تعذر تحميل اللعبة');
   $('l').onclick=askLeave;
-    const rd=$('rdt');if(rd)rd.onclick=roomEdit;
+  const rd=$('rdt');if(rd)rd.onclick=roomEdit;
   $('iv').onclick=()=>X.invite(code,room,players.map(p=>p.id));
   $('rs').onclick=rsend;
   $('ri').onkeydown=e=>{if(e.key==='Enter')rsend()};
