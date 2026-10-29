@@ -2,6 +2,7 @@ import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import * as V from "./voice.js";
 import {info} from "./roles.js";
+import * as B from "./banner.js?v=1";
 
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
@@ -16,7 +17,6 @@ const tagName=m=>m==='mad'?'دموي':'كلاسيكي';
 const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const isBan=r=>{const b=r.bans&&r.bans[X.me.uid];return !!b&&b>Date.now()};
 const DUR=[['30 ثانية',30e3],['5 دقايق',3e5],['30 دقيقة',18e5],['ساعة',36e5],['24 ساعة',864e5],['نهائيًا',0]];
-const bn=new Map();
 export function init(c){X=c;GM.then(g=>{Game=g;if(g)g.init(c)})}
 export function stopRoom(){un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
 
@@ -185,7 +185,7 @@ async function moveSeat(i){
   if(players.some(p=>p.seat===i))return;
   try{await updateDoc(doc(db,'rooms',code,'players',X.me.uid),{seat:i})}catch(e){toast('مشكلة: '+e.code)}
 }
-const rmsgs=()=>{const l=rchat.filter(m=>!m.dead);return l.length?l.map(m=>'<div class="rmsg'+(m.from===X.me.uid?' mine':'')+'"><b>'+esc(m.name)+'</b> '+esc(m.text)+'</div>').join(''):'<div class="rmsg" style="opacity:.6">ابدأ الدردشة مع اللاعبين...</div>'};
+const rmsgs=()=>{const l=rchat.filter(m=>!m.dead&&!m.ing);return l.length?l.map(m=>'<div class="rmsg'+(m.from===X.me.uid?' mine':'')+'"><b>'+esc(m.name)+'</b> '+esc(m.text)+'</div>').join(''):'<div class="rmsg" style="opacity:.6">ابدأ الدردشة مع اللاعبين...</div>'};
 function renderChat(){const el=$('rm');if(!el)return;el.innerHTML=rmsgs();el.scrollTop=el.scrollHeight}
 async function rsend(){
   const el=$('ri'),t=el.value.trim();
@@ -251,50 +251,86 @@ async function kick(u,ms){
   try{await deleteDoc(doc(db,'rooms',code,'players',u))}catch(e){}
   toast('تم الطرد');
 }
-const shrink=file=>new Promise((ok,no)=>{
-  const r=new FileReader();r.onerror=no;
-  r.onload=()=>{const im=new Image();im.onerror=no;im.onload=()=>{
-    const W=800,H=300,c=document.createElement('canvas');c.width=W;c.height=H;
-    const x=c.getContext('2d'),k=Math.max(W/im.width,H/im.height),w=im.width*k,h=im.height*k;
-    x.drawImage(im,(W-w)/2,(H-h)/2,w,h);ok(c.toDataURL('image/jpeg',.7));
-  };im.src=r.result};
-  r.readAsDataURL(file);
-});
+const CN={DZ:'الجزائر',SA:'السعودية',AE:'الإمارات',KW:'الكويت',QA:'قطر',BH:'البحرين',OM:'عُمان',IQ:'العراق',SY:'سوريا',JO:'الأردن',LB:'لبنان',PS:'فلسطين',EG:'مصر',SD:'السودان',LY:'ليبيا',TN:'تونس',MA:'المغرب',MR:'موريتانيا',YE:'اليمن',SO:'الصومال',DJ:'جيبوتي',KM:'جزر القمر',TR:'تركيا'};
+const flag=c=>String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0)));
+const regionName=c=>CN[c]?flag(c)+' '+CN[c]:'غير محدد';
+const genName=g=>g==='m'?'ذكر':g==='f'?'أنثى':'غير محدد';
+const FADE='-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent);';
+const GRAD='linear-gradient(135deg,#c7d2fe,#a5b4fc)';
+const paintB=(el,img)=>{if(el&&B.ok(img))el.style.backgroundImage='url("'+img+'")'};
+const statsOf=async u=>{
+  try{const s=await getDoc(doc(db,'stats',u));const d=s.exists()?s.data():{},g=d.games||0,w=d.wins||0;return [g,(g?(w/g*100).toFixed(1):'0')+'%']}
+  catch(e){return ['-','-']}
+};
+const IB='position:absolute;top:10px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font-size:17px;cursor:pointer;padding:0;margin:0;z-index:5;';
+
+/* بروفيل كامل (يفتح لما تضغط على المربع المنبثق) */
+async function full(u){
+  const mine=u===X.me.uid,me=X.me.uid;
+  const pl=players.find(x=>x.id===u)||{};
+  let pr={name:pl.name||'لاعب',photo:pl.photo||'',pid:'',gender:'',region:''};
+  try{const s=await getDoc(doc(db,'profiles',u));if(s.exists())pr={...pr,...s.data()}}catch(e){}
+  const [g,wr]=await statsOf(u);
+  const o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;background:#fff;color:#222;color-scheme:light;z-index:9998;overflow-y:auto;direction:rtl';
+  const row=(k,v)=>'<div style="display:flex;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f0f0f4"><span>'+k+'</span><span style="color:#8a8aa0">'+v+'</span></div>';
+  const stat=(n,t)=>'<div style="flex:1"><div style="font-size:24px;font-weight:700">'+n+'</div><div style="color:#888;font-size:13px">'+t+'</div></div>';
+  o.innerHTML='<div style="height:230px;position:relative"><div id="fb" style="position:absolute;inset:0;background:'+GRAD+' center top/cover;'+FADE+'"></div></div>'+
+    '<button id="fx" style="'+IB+'right:12px">➜</button>'+(mine?'<button id="fe" style="'+IB+'left:12px">✏️</button>':'')+
+    '<div style="position:relative;z-index:2;padding:0 20px;margin-top:-46px;display:flex;align-items:flex-end;gap:14px"><img src="'+esc(pr.photo)+'" alt="" style="width:96px;height:96px;border-radius:50%;border:4px solid #fff;object-fit:cover;background:#ddd"><div style="font-weight:800;font-size:22px;padding-bottom:8px">'+esc(pr.name)+(room&&room.host===u?' 👑':'')+'</div></div>'+
+    '<div style="display:flex;margin:18px 20px;text-align:center;background:#f4f3fa;border-radius:16px;padding:14px">'+stat(g,'إجمالي الألعاب')+'<div style="width:1px;background:#ddd"></div>'+stat(wr,'معدل الفوز')+'</div>'+
+    '<div>'+row('ID',esc(pr.pid||'-'))+row('الجنس',genName(pr.gender))+row('المنطقة',regionName(pr.region))+'</div><div id="ff" style="padding:20px"></div>';
+  document.body.appendChild(o);
+  const q=i=>o.querySelector('#'+i);
+  q('fx').onclick=()=>o.remove();
+  B.get(u).then(i=>{if(i)paintB(q('fb'),i)});
+  if(mine)q('fe').onclick=()=>B.pick(me,(img,err)=>{if(img){paintB(q('fb'),img);toast('تم تحديث البانر ✅')}else toast('مشكلة: '+((err&&(err.code||err.message))||''))});
+  else{
+    let st=null;
+    try{const s=await getDoc(doc(db,'users',me,'friends',u));if(s.exists())st=s.data().status}catch(e){}
+    const ff=q('ff');
+    const btn=(t,f)=>{ff.innerHTML='<button class="btn" id="fbtn"'+(f?'':' disabled')+'>'+t+'</button>';if(f)q('fbtn').onclick=f};
+    const draw=()=>{
+      if(st==='friends')btn('✔ أصدقاء',null);
+      else if(st==='sent')btn('تم إرسال الطلب',null);
+      else if(st==='received')btn('قبول طلب الصداقة',async()=>{
+        try{
+          await setDoc(doc(db,'users',me,'friends',u),{status:'friends',at:serverTimestamp()});
+          await setDoc(doc(db,'users',u,'friends',me),{status:'friends',at:serverTimestamp()});
+          st='friends';draw();
+        }catch(e){toast('مشكلة: '+e.code)}
+      });
+      else btn('➕ إضافة صديق',async()=>{
+        try{
+          await setDoc(doc(db,'users',me,'friends',u),{status:'sent',at:serverTimestamp()});
+          await setDoc(doc(db,'users',u,'friends',me),{status:'received',at:serverTimestamp()});
+          st='sent';draw();
+        }catch(e){toast('مشكلة: '+e.code)}
+      });
+    };
+    draw();
+  }
+}
+
+/* المربع المنبثق عند الضغط على لاعب */
 async function profile(u){
   const p=players.find(x=>x.id===u);if(!p)return;
   const mine=u===X.me.uid,host=room.host===X.me.uid;
-  const ib='position:absolute;top:8px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:16px;cursor:pointer;';
   const o=document.createElement('div');
   o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9998;padding:16px';
-  o.innerHTML='<div style="width:100%;max-width:340px;background:#fff;color:#222;border-radius:18px;overflow:hidden;direction:rtl">'+
-    '<div id="pb" style="height:150px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);background-size:cover;background-position:center;position:relative">'+
-    (mine?'<button id="pe" style="'+ib+'right:8px">✏️</button>':'<button id="prp" style="'+ib+'left:8px">⚠️</button>')+
-    (host&&!mine?'<button id="pk" style="'+ib+'left:48px">🚫</button>':'')+'</div>'+
-    '<div style="padding:0 18px 18px"><div style="display:flex;align-items:flex-end;gap:12px;margin-top:-34px"><img src="'+esc(p.photo)+'" alt="" style="width:72px;height:72px;border-radius:50%;border:3px solid #fff;object-fit:cover;background:#ddd"><div style="font-weight:700;font-size:18px;padding-bottom:6px">'+esc(p.name)+(room.host===u?' 👑':'')+'</div></div>'+
+  o.innerHTML='<div id="pc" style="width:100%;max-width:340px;background:#fff;color:#222;color-scheme:light;border-radius:18px;overflow:hidden;direction:rtl;position:relative;cursor:pointer">'+
+    '<div style="height:150px;position:relative"><div id="pb" style="position:absolute;inset:0;background:'+GRAD+' center top/cover;'+FADE+'"></div></div>'+
+    (mine?'<button id="pe" style="'+IB+'right:10px">✏️</button>':'<button id="prp" style="'+IB+'right:10px">⚠️</button>')+
+    (host&&!mine?'<button id="pk" style="'+IB+'right:54px">🚫</button>':'')+
+    '<div style="position:relative;z-index:2;padding:0 18px 18px"><div style="display:flex;align-items:flex-end;gap:12px;margin-top:-34px"><img src="'+esc(p.photo)+'" alt="" style="width:72px;height:72px;border-radius:50%;border:3px solid #fff;object-fit:cover;background:#ddd"><div style="font-weight:700;font-size:18px;padding-bottom:6px">'+esc(p.name)+(room.host===u?' 👑':'')+'</div></div>'+
     '<div style="display:flex;margin-top:16px;text-align:center"><div style="flex:1"><div style="font-size:24px;font-weight:700" id="pg">…</div><div style="color:#888;font-size:13px">إجمالي الألعاب</div></div><div style="width:1px;background:#ddd"></div><div style="flex:1"><div style="font-size:24px;font-weight:700" id="pw2">…</div><div style="color:#888;font-size:13px">معدل الفوز</div></div></div></div></div>';
   document.body.appendChild(o);
   o.onclick=e=>{if(e.target===o)o.remove()};
   const q=i=>o.querySelector('#'+i);
-  const setB=img=>{const e=q('pb');if(e&&typeof img==='string'&&img.startsWith('data:image/')&&!img.includes('"'))e.style.backgroundImage='url("'+img+'")'};
-  getDoc(doc(db,'stats',u)).then(s=>{
-    const d=s.exists()?s.data():{},g=d.games||0,w=d.wins||0;
-    if(q('pg'))q('pg').textContent=g;
-    if(q('pw2'))q('pw2').textContent=(g?(w/g*100).toFixed(1):'0')+'%';
-  }).catch(()=>{if(q('pg')){q('pg').textContent='-';q('pw2').textContent='-'}});
-  if(bn.has(u))setB(bn.get(u));
-  else getDoc(doc(db,'banners',u)).then(s=>{const i=s.exists()?s.data().img:null;bn.set(u,i);setB(i)}).catch(()=>{});
-  if(mine)q('pe').onclick=()=>{
-    const f=document.createElement('input');f.type='file';f.accept='image/*';
-    f.onchange=async()=>{
-      const file=f.files[0];if(!file)return;
-      try{
-        const img=await shrink(file);
-        await setDoc(doc(db,'banners',X.me.uid),{img,at:serverTimestamp()});
-        bn.set(X.me.uid,img);setB(img);toast('تم تحديث البانر ✅');
-      }catch(e){toast('مشكلة: '+(e.code||e.message))}
-    };
-    f.click();
-  };
+  q('pc').onclick=e=>{if(e.target.closest('button'))return;o.remove();full(u)};
+  statsOf(u).then(([g,w])=>{if(q('pg')){q('pg').textContent=g;q('pw2').textContent=w}});
+  B.get(u).then(i=>{if(i)paintB(q('pb'),i)});
+  if(mine)q('pe').onclick=()=>B.pick(X.me.uid,(img,err)=>{if(img){paintB(q('pb'),img);toast('تم تحديث البانر ✅')}else toast('مشكلة: '+((err&&(err.code||err.message))||''))});
   else{
     q('prp').onclick=()=>{o.remove();ask('تبلّغ عن '+p.name+'؟',async()=>{
       try{await addDoc(collection(db,'reports'),{from:X.me.uid,target:u,room:code,at:serverTimestamp()});toast('وصل البلاغ ✅')}catch(e){toast('مشكلة: '+e.code)}
