@@ -28,6 +28,7 @@ const SOC=import('./social.js?'+Date.now()).catch(e=>{console.error(e);return nu
 let rerr='';
 const ROO=import('./rooms.js?'+Date.now()).catch(e=>{console.error(e);rerr=String(e&&e.message||e);return null});
 const MEM=import('./me.js?'+Date.now()).catch(e=>{console.error(e);return null});
+const ROL=import('./roles.js?'+Date.now()).catch(e=>{console.error(e);return null});
 const $=i=>document.getElementById(i),A=$('app');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -133,9 +134,9 @@ const t=tab==='store'?['🛒','المتجر']:['✨','اللحظات'];
 A.innerHTML='<div class="mh"><h1>'+t[1]+'</h1></div><div class="list"><div class="empty"><div style="font-size:56px">'+t[0]+'</div>'+t[1]+' قريبًا</div></div>'+navHTML();
 bindNav();return;
 }
-const b='<div class="two"><button class="mode classic" id="rc">كلاسيكي<small>🎲 عشوائي</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🎲 عشوائي</small></button></div><button class="btn alt" id="cus" style="margin-top:12px">🛠️ مخصص</button><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
+const b='<div class="two" style="align-items:stretch"><div style="flex:1;display:flex;flex-direction:column;gap:10px"><button class="mode classic" id="rc">كلاسيكي<small>🔍 بحث عن غرفة</small></button><button class="mode mad" id="rm2">جنون المافيا<small>🔍 بحث عن غرفة</small></button></div><button class="mode" id="cus" style="background:linear-gradient(135deg,#3a3560,#1c1930);font-size:20px">🛠️<br>مخصص<small>أنشئ غرفتك</small></button></div><div class="sep"></div><button class="btn ghost" id="off">🪑 أوف لاين (قعدة)</button>';
 const mb=(Me?Me.mailN():0);
-A.innerHTML=topbar('<div class="ics"><button class="ib mlb" id="ml2" data-n="'+mb+'">✉️</button><button class="ib" id="st">⚙️</button></div>')+'<div class="qa"><button class="qb" id="q1"><i>🏆</i>الرتبة</button><button class="qb" id="q2"><i>📋</i>المهام</button><button class="qb" id="q3"><i>👥</i>يلعب الأصدقاء</button></div><main><div class="logo" style="text-align:center;font-size:26px;margin-bottom:16px">🎭 مجلس المافيا</div>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
+A.innerHTML=topbar('<div class="ics"><button class="ib mlb" id="ml2" data-n="'+mb+'">✉️</button><button class="ib" id="st">⚙️</button></div>')+'<div class="qa"><button class="qb" id="q1"><i>🏆</i>الرتبة</button><button class="qb" id="q2"><i>📋</i>المهام</button><button class="qb" id="q3"><i>👥</i>يلعب الأصدقاء</button></div><main><div class="logo<button class="qb" id="q4"><i>📖</i>التعليمات</button>" style="text-align:center;font-size:26px;margin-bottom:16px">🎭 مجلس المافيا</div>'+b+'<div class="err" id="e2">'+esc(msg||'')+'</div></main>'+navHTML();
 bindNav();
 const R=f=>()=>Rooms?f():toast('تعذر تحميل الغرف: '+rerr);
 const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
@@ -146,6 +147,7 @@ on('off',()=>toast('الأوف لاين قريبًا'));
 on('q1',()=>toast('الرتبة قريبًا'));
 on('q2',()=>toast('المهام قريبًا'));
 on('q3',()=>toast('يلعب الأصدقاء قريبًا'));
+on('q4',async()=>{const r=await ROL;r?r.book():toast('تعذر تحميل التعليمات')});
 on('st',()=>Me?Me.settings():toast('تعذر تحميل الإعدادات، حدّث الصفحة'));
 on('ml2',()=>Me?Me.mail():toast('تعذر تحميل البريد، حدّث الصفحة'));
 }
