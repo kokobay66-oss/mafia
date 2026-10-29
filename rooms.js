@@ -3,6 +3,7 @@ import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,get
 import * as V from "./voice.js";
 import {info} from "./roles.js";
 import * as B from "./banner.js?v=1";
+import * as Store from "./store.js?v=1";
 
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
@@ -17,7 +18,7 @@ const tagName=m=>m==='mad'?'دموي':'كلاسيكي';
 const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const isBan=r=>{const b=r.bans&&r.bans[X.me.uid];return !!b&&b>Date.now()};
 const DUR=[['30 ثانية',30e3],['5 دقايق',3e5],['30 دقيقة',18e5],['ساعة',36e5],['24 ساعة',864e5],['نهائيًا',0]];
-export function init(c){X=c;GM.then(g=>{Game=g;if(g)g.init(c)})}
+export function init(c){X=c;Store.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
 export function stopRoom(){un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
 
 /* صفوف الأدوار (تنعاد في الإنشاء وفي إعدادات الغرفة) */
@@ -73,7 +74,7 @@ function ask(msg,yes){
 const askLeave=()=>ask(room&&room.host===X.me.uid&&!room.public?'أنت المضيف، لو طلعت بتنقفل الغرفة للجميع. تبي تطلع؟':'تبي تطلع من الغرفة؟',leave);
 
 /* الغرف والمقاعد */
-const addMe=(c,seat)=>setDoc(doc(db,'rooms',c,'players',X.me.uid),{name:X.prof.name,photo:X.prof.photo,seat,joinedAt:serverTimestamp()});
+const addMe=(c,seat)=>setDoc(doc(db,'rooms',c,'players',X.me.uid),{name:X.prof.name,photo:X.prof.photo,gender:X.prof.gender||'',seat,joinedAt:serverTimestamp()});
 async function seatInfo(c,mx){
   const s=await getDocs(collection(db,'rooms',c,'players'));
   const t=new Set(s.docs.map(d=>d.data().seat));
