@@ -1,5 +1,5 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getFirestore,doc,setDoc,updateDoc,collection,onSnapshot,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,setDoc,addDoc,updateDoc,collection,onSnapshot,query,orderBy,limit,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import * as V from "./voice.js";
 
 const db=getFirestore(getApp());
@@ -17,7 +17,26 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()
 const pickTop=a=>{const c={};a.forEach(t=>c[t]=(c[t]||0)+1);const m=Math.max(...Object.values(c)),top=Object.keys(c).filter(k=>c[k]===m);return top[Math.floor(Math.random()*top.length)]};
 export function init(c){X=c;CARDS.forEach(r=>{new Image().src='card-'+r+'.jpg'})}
 export const closed=rm=>!!rm&&rm.ph==='end'&&dis===rm.g;
-export function stop(){un.forEach(f=>f());un=[];clearTimeout(timer);clearInterval(iv);timer=iv=null;C=null;room=null;H=null;myRole=null;acts=[];votes=[];sx='';sdone='';picked=null;lastPt=-1}
+export function stop(){un.forEach(f=>f());un=[];clearTimeout(timer);clearInterval(iv);timer=iv=null;C=null;room=null;H=null;myRole=null;acts=[];votes=[];sx='';sdone='';picked=null;lastPt=-1;const f=document.getElementById('fl');if(f)f.remove()}
+
+/* ===== شات المشاهدين (الميتين): رسائل تطير فوق 7 ثواني ===== */
+function fly(m){
+  if(!$('flcss')){
+    const s=document.createElement('style');s.id='flcss';
+    s.textContent='#fl{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}.fm{position:absolute;bottom:130px;background:#000;color:#fff;padding:6px 12px;border-radius:14px;font-size:14px;max-width:70%;animation:fup 7s linear forwards}@keyframes fup{0%{transform:translateY(0);opacity:1}85%{opacity:1}100%{transform:translateY(-60vh);opacity:0}}';
+    document.head.appendChild(s);
+  }
+  let b=$('fl');if(!b){b=document.createElement('div');b.id='fl';document.body.appendChild(b)}
+  const d=document.createElement('div');d.className='fm';d.style.left=(5+Math.random()*40)+'%';
+  d.innerHTML='<b>'+esc(m.name)+'</b> '+esc(m.text);
+  b.appendChild(d);setTimeout(()=>d.remove(),7000);
+}
+async function gsend(){
+  const el=$('gi'),t=el?el.value.trim():'';
+  if(!t||!room||al(me))return;
+  el.value='';
+  try{await addDoc(collection(db,'rooms',C,'chat'),{from:me,name:X.prof.name,text:t,at:serverTimestamp(),dead:true,g:room.g})}catch(e){X.toast('مشكلة: '+e.code)}
+}
 
 /* ===== المضيف: يدير اللعبة ===== */
 export async function start(code,pl,rm){
@@ -143,6 +162,15 @@ export function show(code,rm,pl,leave,rerender){
       draw();
     }));
     un.push(onSnapshot(c('votes'),s=>{votes=s.docs.map(d=>({id:d.id,...d.data()}));draw()}));
+    un.push(onSnapshot(query(c('chat'),orderBy('at','desc'),limit(10)),s=>{
+      s.docChanges().forEach(ch=>{
+        if(ch.type!=='added'||!room)return;
+        const m=ch.doc.data();
+        if(!m.dead||m.g!==room.g||al(me))return;
+        if(m.at&&Date.now()-m.at.toMillis()>8000)return;
+        fly(m);
+      });
+    }));
     if(room.host===me)un.push(onSnapshot(c('acts'),s=>{acts=s.docs.map(d=>({id:d.id,...d.data()}));hostSkip()}));
   }
   if(room.pt!==lastPt){lastPt=room.pt;endAt=Date.now()+(room.dur||0)*1000;sx='';sdone='';picked=null}
@@ -151,7 +179,7 @@ export function show(code,rm,pl,leave,rerender){
 }
 const left=()=>Math.max(0,Math.ceil((endAt-Date.now())/1000));
 const no=u=>room.sm[u]+1;
-const al=u=>room.alive.includes(u);
+const al=u=>!!room&&!!room.alive&&room.alive.includes(u);
 const nm=u=>esc(room.nm[u]||'لاعب');
 function canPick(u){
   if(!myRole||!al(u)||!al(me))return false;
@@ -243,6 +271,7 @@ function draw(){
   record();
   if(dis&&dis===room.g&&room.ph==='end')return;
   policy();
+  const oi=$('gi'),keep=oi?oi.value:'',foc=!!oi&&document.activeElement===oi;
   const ph=room.ph,mx=room.max||10,half=Math.ceil(mx/2),by={};
   Object.keys(room.sm).forEach(u=>by[room.sm[u]]=u);
   const vs=(ph==='vote'||ph==='vres')?votes.filter(v=>v.g===room.g&&v.r===room.rd):[];
@@ -250,7 +279,7 @@ function draw(){
   const rl=R[myRole&&myRole.role]||['...','⏳'];
   X.A.innerHTML=X.topbar('<button class="lv" id="gl">خروج ✕</button>')+'<div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+(ph==='end'?'<button class="lv" id="xe">✕</button>':'')+'</div>'+
     '<main style="justify-content:flex-start;padding-top:4px"><div class="rolechip">دورك: '+rl[1]+' '+rl[0]+(al(me)?'':' · 👻 مشاهد')+'</div><div class="seats" style="min-height:'+(half*68)+'px">'+col(R0(half))+'<div class="mid">'+middle()+'</div>'+col(R0(mx-half).map(i=>i+half))+'</div></main>'+
-    '<div class="rc dock"><div class="rb" style="justify-content:center">'+V.html()+'</div></div>';
+    '<div class="rc dock"><div class="rb" style="justify-content:center">'+V.html()+(al(me)?'':'<input id="gi" maxlength="100" placeholder="دردشة المشاهدين..."><button id="gs">➤</button>')+'</div></div>';
   document.querySelectorAll('.seat[data-u]').forEach(s=>s.onclick=()=>pick(s.dataset.u));
   const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
   b('sk',()=>{sx='kill';sdone='';draw()});
@@ -260,5 +289,8 @@ function draw(){
   b('vk',()=>{picked=null;put('votes',{t:'skip'})});
   b('xe',()=>{dis=room.g;V.force(null);if(ren)ren()});
   b('gl',()=>leaveFn&&leaveFn());
+  b('gs',gsend);
+  const gi=$('gi');if(gi){gi.value=keep;if(foc)gi.focus();gi.onkeydown=e=>{if(e.key==='Enter')gsend()}}
   V.bind(X.toast);
-    }
+                                                                                               }
+    
