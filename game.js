@@ -33,9 +33,10 @@ function fly(m){
 }
 async function gsend(){
   const el=$('gi'),t=el?el.value.trim():'';
-  if(!t||!room||al(me))return;
+  if(!t||!room)return;
   el.value='';
-  try{await addDoc(collection(db,'rooms',C,'chat'),{from:me,name:X.prof.name,text:t,at:serverTimestamp(),dead:true,g:room.g})}catch(e){X.toast('مشكلة: '+e.code)}
+  const d=!al(me);
+  try{await addDoc(collection(db,'rooms',C,'chat'),{from:me,name:X.prof.name,text:t,at:serverTimestamp(),g:room.g,...(d?{dead:true}:{ing:true})})}catch(e){X.toast('مشكلة: '+e.code)}
 }
 
 /* ===== المضيف: يدير اللعبة ===== */
@@ -166,7 +167,8 @@ export function show(code,rm,pl,leave,rerender){
       s.docChanges().forEach(ch=>{
         if(ch.type!=='added'||!room)return;
         const m=ch.doc.data();
-        if(!m.dead||m.g!==room.g||al(me))return;
+        if(m.g!==room.g)return;
+        if(m.dead){if(al(me))return}else if(!m.ing)return;
         if(m.at&&Date.now()-m.at.toMillis()>8000)return;
         fly(m);
       });
@@ -279,7 +281,7 @@ function draw(){
   const rl=R[myRole&&myRole.role]||['...','⏳'];
   X.A.innerHTML=X.topbar('<button class="lv" id="gl">خروج ✕</button>')+'<div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+(ph==='end'?'<button class="lv" id="xe">✕</button>':'')+'</div>'+
     '<main style="justify-content:flex-start;padding-top:4px"><div class="rolechip">دورك: '+rl[1]+' '+rl[0]+(al(me)?'':' · 👻 مشاهد')+'</div><div class="seats" style="min-height:'+(half*68)+'px">'+col(R0(half))+'<div class="mid">'+middle()+'</div>'+col(R0(mx-half).map(i=>i+half))+'</div></main>'+
-    '<div class="rc dock"><div class="rb" style="justify-content:center">'+V.html()+(al(me)?'':'<input id="gi" maxlength="100" placeholder="دردشة المشاهدين..."><button id="gs">➤</button>')+'</div></div>';
+    '<div class="rc dock"><div class="rb" style="justify-content:center">'+V.html()+'<input id="gi" maxlength="100" placeholder="'+(al(me)?'رسالة للجميع...':'دردشة المشاهدين (للميتين فقط)...')+'"><button id="gs">➤</button>'+'</div></div>';
   document.querySelectorAll('.seat[data-u]').forEach(s=>s.onclick=()=>pick(s.dataset.u));
   const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
   b('sk',()=>{sx='kill';sdone='';draw()});
