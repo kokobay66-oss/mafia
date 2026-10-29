@@ -46,7 +46,6 @@ export function custom(msg,needPw,cv){
   '<div class="lk"><label><input type="checkbox" id="lk"'+(cm.lock?' checked':'')+'> 🔒 كلمة سر للغرفة</label></div>'+
   '<input id="pw" maxlength="12" placeholder="اكتب كلمة السر" style="display:'+(cm.lock?'block':'none')+'">'+
   '<div class="err" id="ce"></div><button class="btn" id="c">إنشاء الغرفة</button></div>'+
-  '<div class="card c"><p>أو ادخل بكود الغرفة</p><input id="cd" maxlength="4" inputmode="numeric" placeholder="كود الغرفة" value="'+esc(cv||'')+'">'+(needPw?'<input id="jp" maxlength="12" placeholder="كلمة سر الغرفة">':'')+'<button class="btn alt" id="j" style="font-size:16px;padding:14px">انضم</button></div>'+
   '<div class="err">'+esc(msg||'')+'</div></main>';
   document.querySelectorAll('.mode[data-m]').forEach(b=>b.onclick=()=>{cm.mode=b.dataset.m;$('sw').style.display=cm.mode==='classic'?'block':'none';document.querySelectorAll('.mode[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
   const fixM=()=>{cm.maf=Math.max(1,Math.min(cm.max>10?3:2,cm.maf));$('c_mval').textContent=cm.maf};
@@ -59,7 +58,6 @@ export function custom(msg,needPw,cv){
     if(cm.lock&&pw.length<3){$('ce').textContent='كلمة السر 3 أحرف على الأقل';return}
     try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,snp:cm.mode==='classic'&&cm.snp,maf:cm.maf,doc:cm.doc,det:cm.det})}catch(x){$('ce').textContent='مشكلة: '+x.code}
   };
-  $('j').onclick=()=>joinRoom($('cd').value.trim(),$('jp')?$('jp').value.trim():'');
   $('bk').onclick=()=>ask('تبي ترجع للرئيسية؟',()=>X.home());
 }
 
@@ -104,6 +102,30 @@ async function joinRoom(c,pw){
     if(si.seat<0){custom('الغرفة ممتلئة',false,c);return}
     await addMe(c,si.seat);enter(c);
   }catch(x){custom('مشكلة: '+x.code)}
+}
+/* بحث عن غرفة بالكود (بدون ما تدخل المخصص) */
+export function search(){
+  const s=sheet('🔍 بحث عن غرفة','<input id="sc" maxlength="4" inputmode="numeric" placeholder="كود الغرفة"><input id="sp" maxlength="12" placeholder="كلمة سر الغرفة" style="display:none"><div class="err" id="se"></div><button class="btn" id="sj">انضم</button>');
+  const q=i=>s.o.querySelector('#'+i),err=t=>{q('se').textContent=t};
+  q('sj').onclick=async()=>{
+    const c=q('sc').value.trim(),pw=q('sp').value.trim();
+    if(c.length!==4){err('الكود 4 أرقام');return}
+    try{
+      const g=await getDoc(doc(db,'rooms',c));
+      if(!g.exists()){err('ما لقيت الغرفة');return}
+      const r=g.data();
+      if(r.status!=='lobby'){err('اللعبة بدأت');return}
+      if(isBan(r)){err('أنت محظور من هذي الغرفة');return}
+      if(r.pwh){
+        q('sp').style.display='block';
+        if(!pw){err('الغرفة محمية، اكتب كلمة السر');return}
+        if(await hash(c+':'+pw)!==r.pwh){err('كلمة السر غلط');return}
+      }
+      const si=await seatInfo(c,r.max||10);
+      if(si.seat<0){err('الغرفة ممتلئة');return}
+      await addMe(c,si.seat);s.close();enter(c);
+    }catch(x){err('مشكلة: '+x.code)}
+  };
 }
 export async function joinByInvite(c,ph){
   try{
@@ -312,4 +334,19 @@ function render(){
   V.force(null);V.bind(toast);
 }
 async function leave(){
-  const c=code,me=X.me.uid,host=room&&room.host===me,pu
+  const c=code,me=X.me.uid,host=room&&room.host===me,pub=room&&room.public,st=room&&room.status;
+  const next=players.find(p=>p.id!==me);
+  stopRoom();
+  try{
+    if(host&&pub&&next){
+      const up={host:next.id};
+      if(st==='playing'){up.status='lobby';up.ph=null}
+      await updateDoc(doc(db,'rooms',c),up);
+      await deleteDoc(doc(db,'rooms',c,'players',me));
+    }else{
+      await deleteDoc(doc(db,'rooms',c,'players',me));
+      if(host)await deleteDoc(doc(db,'rooms',c));
+    }
+  }catch(e){}
+  X.home();
+}
