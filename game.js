@@ -292,5 +292,4 @@ function draw(){
   b('gs',gsend);
   const gi=$('gi');if(gi){gi.value=keep;if(foc)gi.focus();gi.onkeydown=e=>{if(e.key==='Enter')gsend()}}
   V.bind(X.toast);
-                                                                                               }
-    
+}
