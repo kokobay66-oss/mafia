@@ -79,8 +79,8 @@ function gcss(){
   '.gs .bdg{position:absolute;top:-6px;left:-6px;width:22px;height:22px;border-radius:50%;background:#d6283d;font-size:12px;line-height:22px;text-align:center;z-index:4}'+
   '.gs .kl{position:absolute;bottom:-5px;left:-5px;font-size:20px;z-index:4}';
   s.textContent+='.gdock{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;z-index:30}.gdock .rm{height:84px}'+
-  '.rs{padding:14px 0 30px;text-align:center;color:#fff}.rsc{font-size:84px;line-height:1}.rsc.l{filter:grayscale(1) brightness(1.25)}'+
-  '.rsh{font-size:56px;font-weight:900;margin:-4px 0 2px;text-shadow:0 4px 14px #0008}.rsh.w{color:#ffd24c}.rsh.l{color:#c9ccff}'+
+  '.rso{position:fixed;top:60px;left:0;right:0;max-width:480px;margin:0 auto;z-index:60;max-height:calc(100vh - 70px);overflow-y:auto;text-align:center;color:#fff;padding:12px 0 22px;background:linear-gradient(rgba(10,8,24,.92),rgba(10,8,24,.78) 60%,rgba(10,8,24,.35));border-radius:0 0 26px 26px}.rsa{position:absolute;top:10px;right:14px;width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.15);color:#fff;font-size:20px;padding:0;margin:0;cursor:pointer}.rsc{font-size:84px;line-height:1}.rsc.lose{filter:grayscale(1) brightness(1.25)}'+
+  '.rsh{font-size:56px;font-weight:900;margin:-4px 0 2px;text-shadow:0 4px 14px #0008}.rsh.win{color:#ffd24c}.rsh.lose{color:#c9ccff}'+
   '.rsl{margin:10px 0 16px;background:rgba(214,218,255,.95);color:#1d1a2b;border-radius:18px 18px 0 0;overflow:hidden}'+
   '.rsr{display:flex;align-items:center;gap:8px;padding:7px 12px;direction:ltr;background:rgba(228,231,255,.97)}.rsr.b{background:rgba(206,210,250,.97)}.rsr.d{opacity:.8}'+
   '.rsr img,.rsr .ph{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #8f95d8;flex:none;background:#99a}'+
@@ -115,8 +115,7 @@ async function fadd(u){
   }catch(e){X.toast('مشكلة: '+e.code)}
   draw();
 }
-function drawEnd(){
-  loadFr();
+function endPanel(){
   const f=room.fin||{},w=room.win,r=myRole&&myRole.role;
   const won=w==='joker'?r==='joker':!!r&&r!=='joker'&&((r==='mafia')===(w==='mafia'));
   const sub=w==='joker'?'فاز الجوكر':w==='mafia'?'فازت المافيا':'فاز المواطنون';
@@ -127,9 +126,7 @@ function drawEnd(){
     const btn=u===me?'':'<button class="rsf" data-f="'+u+'"'+(st==='friends'||st==='sent'?' disabled':'')+'>'+(st==='friends'?'✔':st==='sent'?'⏳':'➕')+'</button>';
     return '<div class="rsr'+(i%2?' b':'')+(al(u)?'':' d')+'">'+(p?'<img src="'+esc(p.photo)+'" alt="">':'<span class="ph"></span>')+'<div class="rsn'+(u===me?' f':'')+'"><span>'+nm(u)+'</span>'+gdi+'</div><b class="rsx">'+no(u)+'</b><span class="rsi" style="background:'+ri[1]+'">'+ri[0]+'</span>'+btn+'</div>';
   }).join('');
-  X.A.innerHTML='<div class="rs"><div class="rsc'+(won?'':' l')+'">🏆</div><div class="rsh '+(won?'w':'l')+'">'+(won?'فوز':'خسارة')+'</div><p style="color:#dde">'+sub+'</p><div class="rsl">'+rows+'</div><button class="btn rsb" id="xe">مواصلة اللعب</button></div>';
-  document.querySelectorAll('.rsf[data-f]').forEach(b=>b.onclick=()=>fadd(b.dataset.f));
-  const x=$('xe');if(x)x.onclick=()=>{dis=room.g;V.force(null);if(ren)ren()};
+  return '<div class="rso"><button class="rsa" id="xa">➜</button><div class="rsc'+(won?'':' lose')+'">🏆</div><div class="rsh '+(won?'win':'lose')+'">'+(won?'فوز':'خسارة')+'</div><p style="color:#dde;margin:0 0 6px">'+sub+'</p><div class="rsl">'+rows+'</div><button class="btn rsb" id="xe">مواصلة اللعب</button></div>';
 }
 
 /* ===== المضيف: يدير اللعبة ===== */
@@ -397,16 +394,16 @@ function draw(){
   record();
   if(dis&&dis===room.g&&room.ph==='end')return;
   policy();
-  if(room.ph==='end'){drawEnd();return}
+  if(room.ph==='end')loadFr();
   const oi=$('gi'),keep=oi?oi.value:'',foc=!!oi&&document.activeElement===oi;
   const ph=room.ph,mx=room.max||10,half=Math.ceil(mx/2),by={};
   Object.keys(room.sm).forEach(u=>by[room.sm[u]]=u);
   const vs=(ph==='vote'||ph==='vres')?votes.filter(v=>v.g===room.g&&v.r===room.rd):[];
   const R0=n=>[...Array(n)].map((_,i)=>i),col=a=>'<div class="col">'+a.map(i=>seatG(i,by,vs)).join('')+'</div>';
   const rl=R[myRole&&myRole.role]||['...','⏳'];
-  X.A.innerHTML='<div class="top"><span></span><button class="lv" id="gl">خروج ✕</button></div><div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+(ph==='end'?'<button class="lv" id="xe">✕</button>':'')+'</div>'+
+  X.A.innerHTML='<div class="top"><span></span><button class="lv" id="gl">خروج ✕</button></div><div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+''+'</div>'+
     '<main style="justify-content:flex-start;padding-top:4px;padding-bottom:170px"><div class="rolechip">دورك: '+rl[1]+' '+rl[0]+(al(me)?'':' · 👻 مشاهد')+'</div><div class="seats gs" style="min-height:'+(half*94)+'px">'+col(R0(half))+'<div class="mid">'+middle()+'</div>'+col(R0(mx-half).map(i=>i+half))+'</div></main>'+
-    '<div class="rc dock gdock"><div class="rm" id="grm">'+gmsgs()+'</div><div class="rb">'+V.html()+'<button id="gc">🃏</button><input id="gi" maxlength="100" placeholder="'+(al(me)?'رسالة للجميع...':'دردشة الأموات (تطير للأموات فقط)...')+'"><button id="gs">➤</button></div></div>';
+    '<div class="rc dock gdock"><div class="rm" id="grm">'+gmsgs()+'</div><div class="rb">'+V.html()+'<button id="gc">🃏</button><input id="gi" maxlength="100" placeholder="'+(al(me)?'رسالة للجميع...':'دردشة الأموات (تطير للأموات فقط)...')+'"><button id="gs">➤</button></div></div>'+(ph==='end'?endPanel():'');
   document.querySelectorAll('.seat[data-u]').forEach(s=>s.onclick=()=>pick(s.dataset.u));
   const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
   b('sk',()=>{sx='kill';sdone='';draw()});
@@ -414,7 +411,9 @@ function draw(){
   b('ss',()=>{sx='';sdone='✅ أبقيت الجرعتين';put('acts',{k:'n',ro:'sorcerer',t:'',x:'skip'})});
   b('sp',()=>put('acts',{k:'s'}));
   b('vk',()=>{picked=null;put('votes',{t:'skip'})});
-  b('xe',()=>{dis=room.g;V.force(null);if(ren)ren()});
+  const closeEnd=()=>{dis=room.g;V.force(null);if(ren)ren()};
+  b('xe',closeEnd);b('xa',closeEnd);
+  document.querySelectorAll('.rsf[data-f]').forEach(x=>x.onclick=()=>fadd(x.dataset.f));
   b('gl',()=>leaveFn&&leaveFn());
   b('gs',gsend);
   b('gc',cardSheet);
