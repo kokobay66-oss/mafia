@@ -1,36 +1,36 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getFirestore,doc,setDoc,addDoc,updateDoc,collection,onSnapshot,query,orderBy,limit,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,setDoc,addDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,limit,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import * as V from "./voice.js";
 
 const db=getFirestore(getApp());
 const R={mafia:['مافيا','🔪'],doctor:['الطبيب','💉'],detective:['المحقق','🕵️'],sorcerer:['الساحر','🧙'],sniper:['القناص','🎯'],joker:['الجوكر','🃏'],citizen:['مواطن','🙂']};
 const CARDS=['mafia','doctor','detective','citizen'];
-const T={pre:5,reveal:5,night:15,dawn:5,talk:40,disc:30,vote:15,vres:6,end:10};
+const T={pre:10,reveal:5,night:15,dawn:5,talk:40,disc:30,vote:15,vres:6,end:25};
 const PH={pre:'اختيار البطاقة',reveal:'كشف الأدوار',night:'الليل',dawn:'الفجر',talk:'وقت الكلام',disc:'النقاش المفتوح',vote:'التصويت',vres:'نتيجة التصويت',end:'النهاية'};
 const PR={mafia:'🔪 اضغط على اللاعب اللي تبون تقتلونه',doctor:'💉 اضغط على اللاعب اللي تبي تحميه',detective:'🕵️ اضغط على اللاعب اللي تشك فيه',sniper:'🎯 رصاصة وحدة بس. اضغط على اللاعب اللي تبي تطلق عليه، أو لا تضغط وتحتفظ بها'};
 let X,C=null,room=null,players=[],me='',un=[],timer=null,iv=null,endAt=0,lastPt=-1,leaveFn=null,ren=null,dis=null;
 let myRole=null,acts=[],votes=[],sx='',sdone='',picked=null,H=null;
 let rec=null;const fnd=new Set(),svd=new Set(),hit=new Set();
-let myClaim=null,gchat=[];const used=new Set();
+let myClaim=null,gchat=[],frs={},frLoad=false;const used=new Set();
 const $=i=>document.getElementById(i);
 const esc=s=>X.esc(s);
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const pickTop=a=>{const c={};a.forEach(t=>c[t]=(c[t]||0)+1);const m=Math.max(...Object.values(c)),top=Object.keys(c).filter(k=>c[k]===m);return top[Math.floor(Math.random()*top.length)]};
 export function init(c){X=c;CARDS.forEach(r=>{new Image().src='card-'+r+'.jpg'})}
 export const closed=rm=>!!rm&&rm.ph==='end'&&dis===rm.g;
-export function stop(){un.forEach(f=>f());un=[];clearTimeout(timer);clearInterval(iv);timer=iv=null;C=null;room=null;H=null;myRole=null;acts=[];votes=[];sx='';sdone='';picked=null;lastPt=-1;myClaim=null;gchat=[];const f=document.getElementById('fl');if(f)f.remove()}
+export function stop(){un.forEach(f=>f());un=[];clearTimeout(timer);clearInterval(iv);timer=iv=null;C=null;room=null;H=null;myRole=null;acts=[];votes=[];sx='';sdone='';picked=null;lastPt=-1;myClaim=null;gchat=[];frs={};frLoad=false;const f=document.getElementById('fl');if(f)f.remove()}
 
 /* ===== شات المشاهدين (الميتين): رسائل تطير فوق 7 ثواني ===== */
 function fly(m){
   if(!$('flcss')){
     const s=document.createElement('style');s.id='flcss';
-    s.textContent='#fl{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}.fm{position:absolute;bottom:250px;background:#000;color:#fff;padding:6px 12px;border-radius:14px;font-size:14px;max-width:70%;animation:fup 7s linear forwards}@keyframes fup{0%{transform:translateY(0);opacity:1}85%{opacity:1}100%{transform:translateY(-60vh);opacity:0}}';
+    s.textContent='#fl{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}.fm{position:absolute;bottom:250px;background:#000;color:#fff;padding:6px 12px;border-radius:14px;font-size:14px;max-width:70%;animation:fup 5s linear forwards}@keyframes fup{0%{transform:translateY(0);opacity:1}85%{opacity:1}100%{transform:translateY(-60vh);opacity:0}}';
     document.head.appendChild(s);
   }
   let b=$('fl');if(!b){b=document.createElement('div');b.id='fl';document.body.appendChild(b)}
   const d=document.createElement('div');d.className='fm';d.style.left=(5+Math.random()*40)+'%';
   d.innerHTML='<b>'+esc(m.name)+'</b> '+esc(m.text);
-  b.appendChild(d);setTimeout(()=>d.remove(),7000);
+  b.appendChild(d);setTimeout(()=>d.remove(),5000);
 }
 async function gsend(){
   const el=$('gi'),t=el?el.value.trim():'';
@@ -59,7 +59,7 @@ function cardSheet(){
   const have=X.prof.cards||{},pool=room.pool||[],can=room.ph==='pre'&&!(myClaim&&myClaim.g===room.g);
   const list=Object.keys(have).filter(r=>have[r]>0&&R[r]&&r!=='citizen');
   const o=document.createElement('div');o.className='ov';
-  o.innerHTML='<div class="sh"><div class="shh"><b>🃏 بطاقاتك</b><button class="mini" id="cx">✕</button></div><p class="c" style="font-size:12px">البطاقة تُستخدم في أول 5 ثواني من اللعبة وتضمن لك الدور</p>'+
+  o.innerHTML='<div class="sh"><div class="shh"><b>🃏 بطاقاتك</b><button class="mini" id="cx">✕</button></div><p class="c" style="font-size:12px">البطاقة تُستخدم في أول 10 ثواني من اللعبة وتضمن لك الدور</p>'+
     (list.length?list.map(r=>'<div class="fr"><div class="fi">'+R[r][1]+' '+R[r][0]+' × '+have[r]+(pool.includes(r)?'':' <small>(مو موجود في هذي الغرفة)</small>')+'</div><button class="mini ok" data-r="'+r+'"'+(can&&pool.includes(r)?'':' disabled')+'>استخدام</button></div>').join(''):'<p class="c">ما عندك بطاقات. اشتر من المتجر 🛒</p>')+'</div>';
   document.body.appendChild(o);
   o.onclick=e=>{if(e.target===o||e.target.id==='cx')o.remove()};
@@ -78,7 +78,58 @@ function gcss(){
   '.gs .nn{font-size:24px;font-weight:900;font-style:italic;color:#fff;text-shadow:0 2px 4px #000;line-height:1}'+
   '.gs .bdg{position:absolute;top:-6px;left:-6px;width:22px;height:22px;border-radius:50%;background:#d6283d;font-size:12px;line-height:22px;text-align:center;z-index:4}'+
   '.gs .kl{position:absolute;bottom:-5px;left:-5px;font-size:20px;z-index:4}';
+  s.textContent+='.gdock{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;z-index:30}.gdock .rm{height:84px}'+
+  '.rs{padding:14px 0 30px;text-align:center;color:#fff}.rsc{font-size:84px;line-height:1}.rsc.l{filter:grayscale(1) brightness(1.25)}'+
+  '.rsh{font-size:56px;font-weight:900;margin:-4px 0 2px;text-shadow:0 4px 14px #0008}.rsh.w{color:#ffd24c}.rsh.l{color:#c9ccff}'+
+  '.rsl{margin:10px 0 16px;background:rgba(214,218,255,.95);color:#1d1a2b;border-radius:18px 18px 0 0;overflow:hidden}'+
+  '.rsr{display:flex;align-items:center;gap:8px;padding:7px 12px;direction:ltr;background:rgba(228,231,255,.97)}.rsr.b{background:rgba(206,210,250,.97)}.rsr.d{opacity:.8}'+
+  '.rsr img,.rsr .ph{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #8f95d8;flex:none;background:#99a}'+
+  '.rsn{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;background:#f3d9a6;border-radius:14px;padding:5px 8px;font-weight:700;unicode-bidi:plaintext}'+
+  '.rsn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px}.rsn.f{background:#cfd2f7}'+
+  '.rsx{font-size:26px;font-weight:900;font-style:italic;color:#4a52b8;min-width:26px;text-align:center}'+
+  '.rsi{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;box-shadow:0 0 8px rgba(0,0,0,.25)}'+
+  '.rsf{width:40px;height:40px;border-radius:50%;border:0;background:#7f86e0;color:#fff;font-size:18px;padding:0;margin:0;flex:none;cursor:pointer}.rsf:disabled{opacity:.55}'+
+  '.rsb{display:block;width:62%;margin:0 auto;background:linear-gradient(#ffc93c,#ff9d00);color:#fff;font-size:19px;padding:14px;border-radius:30px;box-shadow:0 0 16px #ffb30088}';
   document.head.appendChild(s);
+}
+
+/* شاشة النتيجة بعد اللعبة */
+const RI={mafia:['🔪','#e0334c'],doctor:['💉','#2fbf71'],detective:['🔍','#f5a623'],citizen:['👤','#2a8cf0'],sorcerer:['🧙','#8e5cf0'],sniper:['🎯','#c0392b'],joker:['🃏','#e0a800']};
+async function loadFr(){
+  if(frLoad)return;frLoad=true;
+  try{const s=await getDocs(collection(db,'users',me,'friends'));s.docs.forEach(d=>{frs[d.id]=d.data().status})}catch(e){}
+  if(room&&room.ph==='end')draw();
+}
+async function fadd(u){
+  const st=frs[u];
+  try{
+    if(st==='received'){
+      await setDoc(doc(db,'users',me,'friends',u),{status:'friends',at:serverTimestamp()});
+      await setDoc(doc(db,'users',u,'friends',me),{status:'friends',at:serverTimestamp()});
+      frs[u]='friends';
+    }else if(!st){
+      await setDoc(doc(db,'users',me,'friends',u),{status:'sent',at:serverTimestamp()});
+      await setDoc(doc(db,'users',u,'friends',me),{status:'received',at:serverTimestamp()});
+      frs[u]='sent';X.toast('انرسل طلب الصداقة ✅');
+    }
+  }catch(e){X.toast('مشكلة: '+e.code)}
+  draw();
+}
+function drawEnd(){
+  loadFr();
+  const f=room.fin||{},w=room.win,r=myRole&&myRole.role;
+  const won=w==='joker'?r==='joker':!!r&&r!=='joker'&&((r==='mafia')===(w==='mafia'));
+  const sub=w==='joker'?'فاز الجوكر':w==='mafia'?'فازت المافيا':'فاز المواطنون';
+  const ids=Object.keys(f).sort((a,b)=>room.sm[a]-room.sm[b]);
+  const rows=ids.map((u,i)=>{
+    const p=players.find(x=>x.id===u),g=(room.gd||{})[u],ri=RI[f[u]]||RI.citizen,st=frs[u];
+    const gdi=g?'<i class="gd '+g+'">'+(g==='m'?'♂':'♀')+'</i>':'';
+    const btn=u===me?'':'<button class="rsf" data-f="'+u+'"'+(st==='friends'||st==='sent'?' disabled':'')+'>'+(st==='friends'?'✔':st==='sent'?'⏳':'➕')+'</button>';
+    return '<div class="rsr'+(i%2?' b':'')+(al(u)?'':' d')+'">'+(p?'<img src="'+esc(p.photo)+'" alt="">':'<span class="ph"></span>')+'<div class="rsn'+(u===me?' f':'')+'"><span>'+nm(u)+'</span>'+gdi+'</div><b class="rsx">'+no(u)+'</b><span class="rsi" style="background:'+ri[1]+'">'+ri[0]+'</span>'+btn+'</div>';
+  }).join('');
+  X.A.innerHTML='<div class="rs"><div class="rsc'+(won?'':' l')+'">🏆</div><div class="rsh '+(won?'w':'l')+'">'+(won?'فوز':'خسارة')+'</div><p style="color:#dde">'+sub+'</p><div class="rsl">'+rows+'</div><button class="btn rsb" id="xe">مواصلة اللعب</button></div>';
+  document.querySelectorAll('.rsf[data-f]').forEach(b=>b.onclick=()=>fadd(b.dataset.f));
+  const x=$('xe');if(x)x.onclick=()=>{dis=room.g;V.force(null);if(ren)ren()};
 }
 
 /* ===== المضيف: يدير اللعبة ===== */
@@ -137,13 +188,12 @@ const finish=(w,x)=>go({ph:'end',win:w,fin:H.roles,alive:H.alive,spk:null,...x},
 const nightStep=st=>{H.st=st;return go({ph:'night',st,rd:H.rd,spk:null},T.night)};
 const newNight=()=>{H.victim=H.save=H.poison=H.sk=H.sd=null;H.revived=false;return nightStep(0)};
 async function endStep(){
-  const role=H.steps[H.st],rd=H.rd,rr=u=>doc(db,'rooms',H.C,'roles',u);
+  const rd=H.rd,rr=u=>doc(db,'rooms',H.C,'roles',u);
+  for(const role of H.steps){
   const as=acts.filter(a=>a.g===H.G&&a.k==='n'&&a.r===rd&&a.ro===role&&H.alive.includes(a.id)&&H.roles[a.id]===role);
   if(role==='mafia'){
     const t=as.map(a=>a.t).filter(x=>H.alive.includes(x)&&H.roles[x]!=='mafia');
     H.victim=t.length?pickTop(t):null;
-    const s=H.alive.find(u=>H.roles[u]==='sorcerer');
-    if(s)await updateDoc(rr(s),{info:{r:rd,v:H.victim}});
   }
   if(role==='doctor'){const a=as[0];H.save=a&&H.alive.includes(a.t)?a.t:null}
   if(role==='detective'){const a=as[0];if(a&&H.alive.includes(a.t))await updateDoc(rr(a.id),{res:{r:rd,t:a.t,m:H.roles[a.t]==='mafia'}})}
@@ -164,7 +214,7 @@ async function endStep(){
       await updateDoc(rr(a.id),ok?{bul:false,hit:{r:rd}}:{bul:false});
     }
   }
-  if(H.st+1<H.steps.length)return nightStep(H.st+1);
+  }
   const v=H.victim,saved=!!v&&(H.save===v||H.revived),dead=[];
   if(v&&H.save===v){const dd=H.alive.find(u=>H.roles[u]==='doctor');if(dd)await updateDoc(rr(dd),{sv:{r:rd,v}})}
   if(v&&!saved)dead.push(v);
@@ -242,7 +292,7 @@ const nm=u=>esc(room.nm[u]||'لاعب');
 function canPick(u){
   if(!myRole||!al(u)||!al(me))return false;
   const r=myRole.role;
-  if(room.ph==='night'&&room.steps[room.st]===r){
+  if(room.ph==='night'&&(room.steps||[]).includes(r)){
     if(r==='mafia')return !myRole.team.includes(u);
     if(r==='doctor')return true;
     if(r==='detective')return u!==me;
@@ -254,8 +304,20 @@ function canPick(u){
 async function put(col,d){
   try{await setDoc(doc(db,'rooms',C,col,me),{g:room.g,r:room.rd,...d,at:serverTimestamp()});draw()}catch(e){X.toast('مشكلة: '+e.code)}
 }
+function sure(msg,yes){
+  const o=document.createElement('div');o.className='ov dlg';
+  o.innerHTML='<div class="dg"><p>'+esc(msg)+'</p><div class="two"><button class="btn alt" id="dn">إلغاء</button><button class="btn" id="dy">تأكيد</button></div></div>';
+  document.body.appendChild(o);
+  o.querySelector('#dn').onclick=()=>o.remove();
+  o.querySelector('#dy').onclick=()=>{o.remove();yes()};
+  o.onclick=e=>{if(e.target===o)o.remove()};
+}
 function pick(u){
   if(!canPick(u))return;
+  if(room.ph==='night'&&myRole.role==='detective'){
+    sure('تتحقق من اللاعب رقم '+no(u)+' '+(room.nm[u]||'')+'؟ النتيجة تظهر لك أنت بس',()=>{picked=u;put('acts',{k:'n',ro:'detective',t:u,x:''})});
+    return;
+  }
   picked=u;
   if(room.ph==='vote')put('votes',{t:u});
   else put('acts',{k:'n',ro:myRole.role,t:u,x:myRole.role==='sorcerer'?'kill':''});
@@ -286,12 +348,12 @@ function middle(){
   }
   if(ph==='night'){
     if(!iAlive)return ghost;
-    if(room.steps[room.st]!==r)return '<div class="gcard"><div class="em">🌙</div><p>الليل... الكل يغمض عينه</p></div>';
+    if(!['mafia','doctor','detective','sorcerer','sniper'].includes(r)||!(room.steps||[]).includes(r))return '<div class="gcard"><div class="em">🌙</div><p>الليل... الكل يغمض عينه</p></div>';
     if(r==='sniper'&&myRole.bul===false)return '<div class="gcard"><p>🎯 استخدمت رصاصتك</p></div>';
     if(r!=='sorcerer')return '<div class="gcard"><p>'+PR[r]+'</p>'+(picked?'<p>اخترت: رقم '+no(picked)+'</p>':'')+'</div>';
-    const info=myRole.info&&myRole.info.r===room.rd?myRole.info:null,pot=myRole.pot||{};
-    return '<div class="gcard"><p>🧙 جرعاتك</p><p>'+(info&&info.v?'الضحية الليلة: <b>رقم '+no(info.v)+'</b>':'ما فيه ضحية الليلة')+'</p>'+
-      '<button class="btn alt" id="sk"'+(pot.kill?'':' disabled')+'>💀 جرعة القتل</button><button class="btn alt" id="sr"'+(pot.revive&&info&&info.v?'':' disabled')+'>💚 جرعة الإحياء</button><button class="btn ghost" id="ss">إبقاء الجرعتين</button>'+
+    const pot=myRole.pot||{};
+    return '<div class="gcard"><p>🧙 جرعاتك</p><p>جرعة الإحياء تنقذ ضحية المافيا الليلة (إن وجدت)</p>'+
+      '<button class="btn alt" id="sk"'+(pot.kill?'':' disabled')+'>💀 جرعة القتل</button><button class="btn alt" id="sr"'+(pot.revive?'':' disabled')+'>💚 جرعة الإحياء</button><button class="btn ghost" id="ss">إبقاء الجرعتين</button>'+
       (sx==='kill'?'<p>اضغط على اللاعب اللي تبي تسممه</p>':'')+(sdone?'<p>'+sdone+'</p>':'')+'</div>';
   }
   if(ph==='dawn'){
@@ -335,15 +397,16 @@ function draw(){
   record();
   if(dis&&dis===room.g&&room.ph==='end')return;
   policy();
+  if(room.ph==='end'){drawEnd();return}
   const oi=$('gi'),keep=oi?oi.value:'',foc=!!oi&&document.activeElement===oi;
   const ph=room.ph,mx=room.max||10,half=Math.ceil(mx/2),by={};
   Object.keys(room.sm).forEach(u=>by[room.sm[u]]=u);
   const vs=(ph==='vote'||ph==='vres')?votes.filter(v=>v.g===room.g&&v.r===room.rd):[];
   const R0=n=>[...Array(n)].map((_,i)=>i),col=a=>'<div class="col">'+a.map(i=>seatG(i,by,vs)).join('')+'</div>';
   const rl=R[myRole&&myRole.role]||['...','⏳'];
-  X.A.innerHTML=X.topbar('<button class="lv" id="gl">خروج ✕</button>')+'<div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+(ph==='end'?'<button class="lv" id="xe">✕</button>':'')+'</div>'+
-    '<main style="justify-content:flex-start;padding-top:4px"><div class="rolechip">دورك: '+rl[1]+' '+rl[0]+(al(me)?'':' · 👻 مشاهد')+'</div><div class="seats gs" style="min-height:'+(half*94)+'px">'+col(R0(half))+'<div class="mid">'+middle()+'</div>'+col(R0(mx-half).map(i=>i+half))+'</div></main>'+
-    '<div class="rc dock"><div class="rm" id="grm">'+gmsgs()+'</div><div class="rb">'+V.html()+'<button id="gc">🃏</button><input id="gi" maxlength="100" placeholder="'+(al(me)?'رسالة للجميع...':'دردشة الأموات (تطير للأموات فقط)...')+'"><button id="gs">➤</button></div></div>';
+  X.A.innerHTML='<div class="top"><span></span><button class="lv" id="gl">خروج ✕</button></div><div class="gh"><span>الجولة '+room.rd+'</span><span>'+PH[ph]+'</span>'+(room.dur?'<span>⏱ <b id="cd">'+left()+'</b></span>':'')+(ph==='end'?'<button class="lv" id="xe">✕</button>':'')+'</div>'+
+    '<main style="justify-content:flex-start;padding-top:4px;padding-bottom:170px"><div class="rolechip">دورك: '+rl[1]+' '+rl[0]+(al(me)?'':' · 👻 مشاهد')+'</div><div class="seats gs" style="min-height:'+(half*94)+'px">'+col(R0(half))+'<div class="mid">'+middle()+'</div>'+col(R0(mx-half).map(i=>i+half))+'</div></main>'+
+    '<div class="rc dock gdock"><div class="rm" id="grm">'+gmsgs()+'</div><div class="rb">'+V.html()+'<button id="gc">🃏</button><input id="gi" maxlength="100" placeholder="'+(al(me)?'رسالة للجميع...':'دردشة الأموات (تطير للأموات فقط)...')+'"><button id="gs">➤</button></div></div>';
   document.querySelectorAll('.seat[data-u]').forEach(s=>s.onclick=()=>pick(s.dataset.u));
   const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
   b('sk',()=>{sx='kill';sdone='';draw()});
