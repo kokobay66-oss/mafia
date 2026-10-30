@@ -8,7 +8,7 @@ import * as Store from "./store.js?v=1";
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
 const GM=import('./game.js?'+Date.now()).catch(e=>{console.error(e);return null});
-let cm={mode:'classic',max:10,lock:false,sorc:false,maf:2,doc:true,det:true,snp:false};
+let cm={name:'',mode:'classic',max:10,lock:false,sorc:false,maf:2,doc:true,det:true,snp:false};
 const MINSTART=2; // للتجربة، لاحقًا 6
 const MAD_OPEN=true; // false = يقفل وضع الدموي (قريبًا)
 const $=i=>document.getElementById(i);
@@ -20,7 +20,7 @@ const isBan=r=>{const b=r.bans&&r.bans[X.me.uid];return !!b&&b>Date.now()};
 const DUR=[['30 ثانية',30e3],['5 دقايق',3e5],['30 دقيقة',18e5],['ساعة',36e5],['24 ساعة',864e5],['نهائيًا',0]];
 const bar=(a,b)=>'<div class="top"><div style="display:flex;gap:8px;align-items:center">'+a+'</div><div style="display:flex;gap:8px;align-items:center">'+b+'</div></div>';
 export function init(c){X=c;Store.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
-export function stopRoom(){un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
+export function stopRoom(){if(rsh){rsh.close();rsh=null}un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
 
 /* صفوف الأدوار (تنعاد في الإنشاء وفي إعدادات الغرفة) */
 const RR=[['doc','doctor','الطبيب','card-doctor.jpg'],['det','detective','المحقق','card-detective.jpg'],['sorc','sorcerer','الساحر','🧙'],['snp','sniper','القناص','🎯']];
@@ -42,7 +42,7 @@ export function custom(msg,needPw,cv){
   X.th(false);
   const M=m=>'<button class="mode '+m+(cm.mode===m?' on':'')+'" data-m="'+m+'">'+tagName(m)+'</button>';
   X.A.innerHTML=bar('<button class="lv" id="bk">→</button>','')+'<main style="justify-content:flex-start">'+
-  '<div class="card c"><p>نوع الغرفة</p><div class="two">'+M('classic')+M('mad')+'</div>'+
+  '<div class="card c"><input id="rn" maxlength="20" placeholder="اسم الغرفة" value="'+esc(cm.name||'')+'"><p>نوع الغرفة</p><div class="two">'+M('classic')+M('mad')+'</div>'+
   '<p>عدد اللاعبين</p><div class="step"><button id="smin">−</button><b id="sval">'+cm.max+'</b><button id="spl">+</button></div>'+
   '<div id="sw" style="display:'+(cm.mode==='classic'?'block':'none')+'"><p>الأدوار</p>'+rolesHTML(cm,'c_')+'</div>'+
   '<div class="lk"><label><input type="checkbox" id="lk"'+(cm.lock?' checked':'')+'> 🔒 كلمة سر للغرفة</label></div>'+
@@ -52,13 +52,14 @@ export function custom(msg,needPw,cv){
   document.querySelectorAll('.mode[data-m]').forEach(b=>b.onclick=()=>{cm.mode=b.dataset.m;$('sw').style.display=cm.mode==='classic'?'block':'none';document.querySelectorAll('.mode[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
   const fixM=()=>{cm.maf=Math.max(1,Math.min(cm.max>10?3:2,cm.maf));$('c_mval').textContent=cm.maf};
   bindRoles(document,cm,'c_',fixM);
+  $('rn').oninput=e=>{cm.name=e.target.value};
   $('smin').onclick=()=>{cm.max=Math.max(6,cm.max-1);$('sval').textContent=cm.max;fixM()};
   $('spl').onclick=()=>{cm.max=Math.min(16,cm.max+1);$('sval').textContent=cm.max;fixM()};
   $('lk').onchange=e=>{cm.lock=e.target.checked;$('pw').style.display=cm.lock?'block':'none'};
   $('c').onclick=async()=>{
     const pw=cm.lock?$('pw').value.trim():'';
     if(cm.lock&&pw.length<3){$('ce').textContent='كلمة السر 3 أحرف على الأقل';return}
-    try{await newRoom({pub:false,mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,snp:cm.mode==='classic'&&cm.snp,maf:cm.maf,doc:cm.doc,det:cm.det})}catch(x){$('ce').textContent='مشكلة: '+x.code}
+    try{await newRoom({pub:false,name:cm.name.trim(),mode:cm.mode,max:cm.max,pass:pw,sorc:cm.mode==='classic'&&cm.sorc,snp:cm.mode==='classic'&&cm.snp,maf:cm.maf,doc:cm.doc,det:cm.det})}catch(x){$('ce').textContent='مشكلة: '+x.code}
   };
   $('bk').onclick=()=>ask('تبي ترجع للرئيسية؟',()=>X.home());
 }
@@ -85,7 +86,7 @@ async function seatInfo(c,mx){
 async function newRoom(o){
   let c;do{c=String(Math.floor(1000+Math.random()*9000))}while((await getDoc(doc(db,'rooms',c))).exists());
   const ph=o.pass?await hash(c+':'+o.pass):null;
-  await setDoc(doc(db,'rooms',c),{host:X.me.uid,status:'lobby',public:o.pub,open:!!o.pub||!ph,mode:o.mode,max:o.max,sorc:!!o.sorc,useSnp:!!o.snp,maf:o.maf||0,useDoc:o.doc!==false,useDet:o.det!==false,pwh:ph,createdAt:serverTimestamp()});
+  await setDoc(doc(db,'rooms',c),{host:X.me.uid,name:o.name||'',status:'lobby',public:o.pub,open:!!o.pub||!ph,mode:o.mode,max:o.max,sorc:!!o.sorc,useSnp:!!o.snp,maf:o.maf||0,useDoc:o.doc!==false,useDet:o.det!==false,pwh:ph,createdAt:serverTimestamp()});
   await addMe(c,0);enter(c);
 }
 async function joinRoom(c,pw){
@@ -172,6 +173,7 @@ function enter(c){
   }));
   un.push(onSnapshot(query(collection(db,'rooms',c,'players'),orderBy('joinedAt')),s=>{
     players=s.docs.map(d=>({id:d.id,...d.data()}));render();
+    if(rsh&&rsh.o.isConnected)rsh.paint();else rsh=null;
   }));
   un.push(onSnapshot(query(collection(db,'rooms',c,'chat'),orderBy('at','desc'),limit(50)),s=>{
     rchat=s.docs.map(d=>d.data()).reverse();renderChat();
@@ -184,8 +186,36 @@ function seatHTML(i){
 }
 const col=a=>'<div class="col">'+a.map(seatHTML).join('')+'</div>';
 async function moveSeat(i){
-  if(players.some(p=>p.seat===i))return;
-  try{await updateDoc(doc(db,'rooms',code,'players',X.me.uid),{seat:i})}catch(e){toast('مشكلة: '+e.code)}
+  if(players.some(p=>!p.spec&&p.seat===i))return;
+  try{await updateDoc(doc(db,'rooms',code,'players',X.me.uid),{seat:i,spec:false})}catch(e){toast('مشكلة: '+e.code)}
+}
+/* قائمة اللاعبين والمشاهدين (نص شاشة من تحت) */
+let rsh=null,rtab='p';
+function playersSheet(){
+  const s=sheet('👥 الغرفة','<div id="rpb"></div>');
+  rsh=s;
+  const me=X.me.uid;
+  s.paint=()=>{
+    const seated=players.filter(p=>!p.spec),specs=players.filter(p=>p.spec),list=rtab==='p'?seated:specs;
+    const tab=(k,t,n)=>'<button class="btn'+(rtab===k?'':' alt')+'" data-t="'+k+'" style="flex:1;font-size:15px;padding:10px;margin:0">'+t+' ('+n+')</button>';
+    const el=s.o.querySelector('#rpb');if(!el)return;
+    el.innerHTML='<div style="display:flex;gap:8px;margin-bottom:10px">'+tab('p','اللاعبون',seated.length)+tab('s','المشاهدون',specs.length)+'</div>'+
+      (list.length?list.map(p=>'<div class="fr" data-u="'+p.id+'" style="cursor:pointer"><img class="av" src="'+esc(p.photo)+'" alt=""><div class="fi"><div class="pn">'+esc(p.name)+(p.id===room.host?' 👑':'')+(p.id===me?' <small>(أنت)</small>':'')+'</div></div>'+(p.id===me?(rtab==='p'?'<button class="mini" data-a="eye" title="مشاهد">👁</button>':'<button class="mini ok" data-a="sit">🪑 العب</button>'):'')+'</div>').join(''):'<p class="c">ما فيه أحد</p>');
+    el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{rtab=b.dataset.t;s.paint()});
+    el.querySelectorAll('.fr[data-u]').forEach(r=>r.onclick=e=>{if(e.target.closest('button'))return;profile(r.dataset.u)});
+    const eye=el.querySelector('[data-a="eye"]');
+    if(eye)eye.onclick=()=>ask('تبي تصير مشاهد؟ مقعدك يتحرر',async()=>{
+      try{await updateDoc(doc(db,'rooms',code,'players',me),{spec:true,seat:-1});rtab='s'}catch(x){toast('مشكلة: '+x.code)}
+    });
+    const sit=el.querySelector('[data-a="sit"]');
+    if(sit)sit.onclick=async()=>{
+      const used=new Set(seated.map(p=>p.seat));let seat=-1;
+      for(let i=0;i<(room.max||10);i++)if(!used.has(i)){seat=i;break}
+      if(seat<0){toast('الغرفة ممتلئة');return}
+      try{await updateDoc(doc(db,'rooms',code,'players',me),{seat,spec:false});rtab='p'}catch(x){toast('مشكلة: '+x.code)}
+    };
+  };
+  s.paint();
 }
 const rmsgs=()=>{const l=rchat.filter(m=>!m.dead&&!m.ing);return l.length?l.map(m=>'<div class="rmsg'+(m.from===X.me.uid?' mine':'')+'"><b>'+esc(m.name)+'</b> '+esc(m.text)+'</div>').join(''):'<div class="rmsg" style="opacity:.6">ابدأ الدردشة مع اللاعبين...</div>'};
 function renderChat(){const el=$('rm');if(!el)return;el.innerHTML=rmsgs();el.scrollTop=el.scrollHeight}
@@ -197,7 +227,7 @@ async function rsend(){
 }
 function rolesRow(){
   const mad=(room.mode||'classic')==='mad';
-  const mc=room.maf>0?room.maf:(players.length>=5?2:1);
+  const mc=room.maf>0?room.maf:(players.filter(p=>!p.spec).length>=5?2:1);
   const it=[['🔪','مافيا ×'+mc,true],['💉','الطبيب',room.useDoc!==false],['🕵️','المحقق',room.useDet!==false],['🧙','الساحر',!!room.sorc],['🎯','القناص',mad||!!room.useSnp]];
   if(mad)it.push(['🃏','الجوكر',true]);
   return '<div class="rol">'+it.map(x=>'<span class="rch'+(x[2]?'':' off')+'">'+x[0]+' '+x[1]+'</span>').join('')+'</div>';
@@ -217,7 +247,7 @@ function roomEdit(){
   const cls=(room.mode||'classic')==='classic',pub=!!room.public;
   let mx=room.max||10;
   const st={maf:room.maf>0?room.maf:2,doc:room.useDoc!==false,det:room.useDet!==false,sorc:!!room.sorc,snp:!!room.useSnp,lock:!!room.pwh};
-  const s=sheet('إعدادات الغرفة','<p>عدد اللاعبين</p><div class="step"><button id="em1">−</button><b id="emv">'+mx+'</b><button id="em2">+</button></div>'+
+  const s=sheet('إعدادات الغرفة','<p>اسم الغرفة</p><input id="ern" maxlength="20" value="'+esc(room.name||'')+'"><p>عدد اللاعبين</p><div class="step"><button id="em1">−</button><b id="emv">'+mx+'</b><button id="em2">+</button></div>'+
     (cls?'<p>الأدوار</p>'+rolesHTML(st,'e_'):'')+
     (pub?'':'<div class="lk"><label><input type="checkbox" id="elk"'+(st.lock?' checked':'')+'> 🔒 كلمة سر للغرفة</label></div><input id="epw" maxlength="12" placeholder="'+(room.pwh?'كلمة سر جديدة (فاضية = نفس القديمة)':'اكتب كلمة السر')+'" style="display:'+(st.lock?'block':'none')+'">')+
     '<div class="err" id="ee"></div><button class="btn" id="es">حفظ</button>');
@@ -231,6 +261,7 @@ function roomEdit(){
   q('es').onclick=async()=>{
     try{
       const up=cls?{max:mx,maf:st.maf,useDoc:st.doc,useDet:st.det,sorc:st.sorc,useSnp:st.snp}:{max:mx};
+      up.name=q('ern').value.trim();
       if(!pub){
         let ph=room.pwh||null;
         if(!st.lock)ph=null;
@@ -347,23 +378,30 @@ async function profile(u){
 
 function render(){
   if(!room||!code)return;
+  const seated=players.filter(p=>!p.spec),specs=players.filter(p=>p.spec);
   const host=room.host===X.me.uid,mx=room.max||10,half=Math.ceil(mx/2),mode=room.mode||'classic';
   if(room.status==='playing'&&!(Game&&Game.closed(room))){X.A.classList.remove('fix');if(Game)Game.show(code,room,players,askLeave,render);return}
   if(Game&&room.status!=='playing')Game.stop();
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
-  const R=n=>[...Array(n)].map((_,i)=>i),can=(mode==='classic'||MAD_OPEN)&&players.length>=MINSTART&&room.status!=='playing';
+  const R=n=>[...Array(n)].map((_,i)=>i),can=(mode==='classic'||MAD_OPEN)&&seated.length>=MINSTART&&room.status!=='playing';
   X.A.classList.add('fix');
-  X.A.innerHTML=bar('','<button class="lv" id="l">✕</button>'+(host?'<button class="dots" id="rdt">•••</button>':''))+'<div class="ri"><span>غرفة '+code+'</span><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'<span>👥 '+players.length+'/'+mx+'</span></div>'+
+  X.A.innerHTML=bar('','<button class="lv" id="l">✕</button>')+(function(){
+    const nm0=room.name||('غرفة '+code),pill='display:flex;flex-direction:column;align-items:flex-start;background:rgba(14,22,60,.72);border-radius:22px;padding:8px 16px;min-width:0',cb='width:auto;margin:0;padding:8px 14px;border-radius:20px;background:rgba(14,22,60,.72);color:#fff;border:0;font-size:14px;cursor:pointer';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 14px 8px"><div style="'+pill+'"><b style="color:#fff;font-size:15px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(nm0)+'</b><span style="color:#9aa6d0;font-size:12px;direction:ltr">ID: '+code+'</span></div>'+
+      '<div style="display:flex;align-items:center;gap:6px"><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+(host?'<button id="rdt" style="'+cb+'">•••</button>':'')+'<button id="rcn" style="'+cb+'">👥 '+seated.length+'/'+mx+(specs.length?' · 👁 '+specs.length:'')+'</button></div></div>';
+  })()+
   rolesRow()+'<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
-  (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'&&!MAD_OPEN?'الدموي قريبًا':'ابدأ اللعبة'+(players.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
+  (host?'<button class="btn" id="s" '+(can?'':'disabled')+'>'+(mode!=='classic'&&!MAD_OPEN?'الدموي قريبًا':'ابدأ اللعبة'+(seated.length<MINSTART?' (يحتاج '+MINSTART+')':''))+'</button>':'<p class="c">ننتظر المضيف يبدأ...</p>')+
   '<button class="btn alt" id="iv" style="font-size:15px;padding:12px">📨 دعوة</button></div>'+col(R(mx-half).map(i=>i+half))+'</div></div>'+
   '<div class="rc dock"><div class="rm" id="rm">'+rmsgs()+'</div><div class="rb">'+V.html()+'<input id="ri" maxlength="200" placeholder="رسالة للجميع..."><button id="rs">➤</button></div></div>';
   document.querySelectorAll('[data-seat]').forEach(x=>x.onclick=()=>moveSeat(+x.dataset.seat));
   document.querySelectorAll('[data-p]').forEach(x=>x.onclick=()=>profile(x.dataset.p));
-  if(host&&can)$('s').onclick=()=>Game?Game.start(code,players,room):toast('تعذر تحميل اللعبة');
+  if(host&&can)$('s').onclick=()=>Game?Game.start(code,seated,room):toast('تعذر تحميل اللعبة');
   $('l').onclick=askLeave;
   const rd=$('rdt');if(rd)rd.onclick=roomEdit;
+  $('rcn').onclick=playersSheet;
   $('iv').onclick=()=>X.invite(code,room,players.map(p=>p.id));
   $('rs').onclick=rsend;
   $('ri').onkeydown=e=>{if(e.key==='Enter')rsend()};
