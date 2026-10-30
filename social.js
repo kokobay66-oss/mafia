@@ -1,5 +1,6 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,arrayUnion,arrayRemove,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import * as B from "./banner.js?v=1";
 
 const db=getFirestore(getApp());
 let X,friends=[],chats=[],grps=[],fU=[],cU=[],U={},view='',curRead=null;
@@ -38,6 +39,40 @@ async function getU(u){
   return U[u];
 }
 
+/* أدوات مشتركة */
+const CN={DZ:'الجزائر',SA:'السعودية',AE:'الإمارات',KW:'الكويت',QA:'قطر',BH:'البحرين',OM:'عُمان',IQ:'العراق',SY:'سوريا',JO:'الأردن',LB:'لبنان',PS:'فلسطين',EG:'مصر',SD:'السودان',LY:'ليبيا',TN:'تونس',MA:'المغرب',MR:'موريتانيا',YE:'اليمن',SO:'الصومال',DJ:'جيبوتي',KM:'جزر القمر',TR:'تركيا'};
+const flag=c=>String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0)));
+const regionName=c=>CN[c]?flag(c)+' '+CN[c]:'غير محدد';
+const genName=g=>g==='m'?'ذكر':g==='f'?'أنثى':'غير محدد';
+const GRAD='linear-gradient(135deg,#c7d2fe,#a5b4fc)';
+const FADE='-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent);';
+const statsOf=async u=>{
+  try{const s=await getDoc(doc(db,'stats',u));const d=s.exists()?s.data():{},g=d.games||0,w=d.wins||0;return [g,(g?(w/g*100).toFixed(1):'0')+'%']}
+  catch(e){return ['-','-']}
+};
+function sheet(title,html){
+  const o=document.createElement('div');o.className='ov';
+  o.innerHTML='<div class="sh"><div class="shh"><b>'+title+'</b><button class="mini" id="shx">✕</button></div><div style="max-height:65vh;overflow:auto">'+html+'</div></div>';
+  document.body.appendChild(o);
+  const close=()=>o.remove();
+  o.onclick=e=>{if(e.target===o||e.target.id==='shx')close()};
+  return {o,close};
+}
+function sure(msg,yes){
+  const o=document.createElement('div');o.className='ov dlg';
+  o.innerHTML='<div class="dg"><p>'+esc(msg)+'</p><div class="two"><button class="btn alt" id="dn">إلغاء</button><button class="btn" id="dy">تأكيد</button></div></div>';
+  document.body.appendChild(o);
+  o.querySelector('#dn').onclick=()=>o.remove();
+  o.querySelector('#dy').onclick=()=>{o.remove();yes()};
+  o.onclick=e=>{if(e.target===o)o.remove()};
+}
+const gAv=(g,cls)=>g.photo?'<img class="av" src="'+esc(g.photo)+'" alt="">':'<div class="gav">👥</div>';
+/* رسالة نظام داخل المجموعة + تحديث آخر رسالة */
+async function gmsg(gid,text,extra){
+  await addDoc(collection(db,'groups',gid,'msgs'),{from:uid(),text,sys:1,at:serverTimestamp()});
+  await updateDoc(doc(db,'groups',gid),{last:text,lastAt:serverTimestamp(),...(extra||{})});
+}
+
 /* تبويب الرسائل */
 export function tabScreen(){
   stopChat();view='conv';X.th(true);
@@ -51,9 +86,9 @@ async function drawConvs(){
   const el=$('cl');if(!el)return;
   const items=[
     ...chats.map(c=>({k:'f',id:other(c),name:U[other(c)].name,photo:U[other(c)].photo,last:c.last,at:c.lastAt,n:unreadOf(c)})),
-    ...grps.map(g=>({k:'g',id:g.id,name:g.name,last:g.last,at:g.lastAt,n:unreadOf(g)}))
+    ...grps.map(g=>({k:'g',id:g.id,name:g.name,photo:g.photo||'',last:g.last,at:g.lastAt,n:unreadOf(g)}))
   ].sort((a,b)=>tm(b.at)-tm(a.at));
-  el.innerHTML=items.length?items.map(i=>'<div class="cv" data-k="'+i.k+'" data-id="'+i.id+'">'+(i.k==='g'?'<div class="gav">👥</div>':'<img class="av" src="'+esc(i.photo)+'" alt="">')+'<div class="t"><div class="n">'+esc(i.name)+'</div><div class="m">'+esc(i.last||'')+'</div></div><div class="d"><span>'+fmt(i.at)+'</span>'+(i.n?'<span class="bd">'+(i.n>99?'99+':i.n)+'</span>':'')+'</div></div>').join(''):'<div class="empty">ما عندك محادثات بعد<br>اضغط 👥 وابدأ مع أصدقائك</div>';
+  el.innerHTML=items.length?items.map(i=>'<div class="cv" data-k="'+i.k+'" data-id="'+i.id+'">'+((i.k==='g'&&!i.photo)?'<div class="gav">👥</div>':'<img class="av" src="'+esc(i.photo)+'" alt="">')+'<div class="t"><div class="n">'+esc(i.name)+'</div><div class="m">'+esc(i.last||'')+'</div></div><div class="d"><span>'+fmt(i.at)+'</span>'+(i.n?'<span class="bd">'+(i.n>99?'99+':i.n)+'</span>':'')+'</div></div>').join(''):'<div class="empty">ما عندك محادثات بعد<br>اضغط 👥 وابدأ مع أصدقائك</div>';
   el.querySelectorAll('.cv').forEach(r=>r.onclick=()=>openChat(r.dataset.k,r.dataset.id));
 }
 function toggleMenu(){
@@ -114,19 +149,31 @@ async function addFriend(){
     await sendReq(o);$('fid').value='';m('انرسل الطلب ✅');
   }catch(x){m('مشكلة: '+x.code)}
 }
+
+/* البروفيل (مع البانر) */
 async function profileScreen(u,back){
   stopChat();view='profile';X.th(true);
-  const p=await getU(u),f=friends.find(x=>x.id===u),isF=f&&f.status==='friends';
+  const [p,bn,st]=await Promise.all([getU(u),B.get(u),statsOf(u)]);
+  const f=friends.find(x=>x.id===u),isF=f&&f.status==='friends';
   let act='';
   if(u!==uid()){
     if(isF)act='<button class="btn" id="pm">💬 مراسلة</button><button class="btn ghost" id="pd">حذف الصديق</button>';
-    else if(f)act='<p class="c">'+(f.status==='sent'?'أرسلت له طلب صداقة':'أرسل لك طلب صداقة')+'</p>';
+    else if(f&&f.status==='received')act='<button class="btn" id="pc">قبول طلب الصداقة</button>';
+    else if(f)act='<p class="c">أرسلت له طلب صداقة</p>';
     else act='<button class="btn" id="pa">➕ إضافة صديق</button>';
   }
-  X.A.innerHTML=X.hdr('الملف الشخصي')+'<div class="pad"><div class="card c"><img class="av big" src="'+esc(p.photo)+'" alt=""><h2 style="margin:10px 0 2px">'+esc(p.name)+'</h2><p>ID: '+esc(p.pid)+'</p></div>'+act+'<div class="err" id="pe"></div></div>';
+  const row=(k,v)=>'<div style="display:flex;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f0f0f4"><span>'+k+'</span><span style="color:#8a8aa0">'+v+'</span></div>';
+  const stat=(n,t)=>'<div style="flex:1"><div style="font-size:24px;font-weight:700">'+n+'</div><div style="color:#8a8aa0;font-size:13px">'+t+'</div></div>';
+  X.A.innerHTML='<div style="position:relative;height:230px"><div id="pbn" style="position:absolute;inset:0;background:'+GRAD+' center top/cover;'+FADE+'"></div><button class="ib" id="bk" style="position:absolute;top:14px;right:14px;z-index:5;background:rgba(0,0,0,.5);color:#fff;border:0">➜</button></div>'+
+    '<div style="position:relative;z-index:2;padding:0 20px;margin-top:-46px;display:flex;align-items:flex-end;gap:14px"><img class="av big" src="'+esc(p.photo)+'" alt="" style="border:4px solid #fff;width:96px;height:96px"><div style="font-weight:800;font-size:22px;padding-bottom:8px">'+esc(p.name)+'</div></div>'+
+    '<div style="display:flex;margin:18px 20px;text-align:center;background:#f4f3fa;border-radius:16px;padding:14px">'+stat(st[0],'إجمالي الألعاب')+'<div style="width:1px;background:#ddd"></div>'+stat(st[1],'معدل الفوز')+'</div>'+
+    '<div>'+row('ID',esc(p.pid||'-'))+row('الجنس',genName(p.gender))+row('المنطقة',regionName(p.region))+'</div>'+
+    '<div class="pad" style="padding-top:16px">'+act+'<div class="err" id="pe"></div></div>';
+  if(bn&&B.ok(bn))$('pbn').style.backgroundImage='url("'+bn+'")';
   $('bk').onclick=back;
   if($('pm'))$('pm').onclick=()=>openChat('f',u);
-  if($('pd'))$('pd').onclick=async()=>{await removeF(u);X.home()};
+  if($('pd'))$('pd').onclick=()=>sure('تحذف '+p.name+' من أصدقائك؟',async()=>{await removeF(u);X.home()});
+  if($('pc'))$('pc').onclick=async()=>{await accept(u);profileScreen(u,back)};
   if($('pa'))$('pa').onclick=async()=>{try{await sendReq(u);$('pa').remove();$('pe').textContent='انرسل الطلب ✅'}catch(x){$('pe').textContent='مشكلة: '+x.code}};
 }
 
@@ -134,15 +181,15 @@ async function profileScreen(u,back){
 async function openChat(k,id){
   stopChat();view='chat';X.th(true);X.A.classList.add('fix');
   const me=uid();
-  let title,photo='',path,gid=null,cid=null;
+  let title,photo='',path,gid=null,cid=null,gphoto='';
   if(k==='f'){const u=await getU(id);title=u.name;photo=u.photo;cid=[me,id].sort().join('_');path=['chats',cid,'msgs']}
   else{
     const s=await getDoc(doc(db,'groups',id));
     if(!s.exists()){toast('المجموعة غير موجودة');X.home();return}
-    title=s.data().name;gid=id;path=['groups',id,'msgs'];
+    title=s.data().name;gphoto=s.data().photo||'';gid=id;path=['groups',id,'msgs'];
   }
   const back=()=>openChat(k,id);
-  X.A.innerHTML='<div class="ch"><button class="ib" id="bk">➜</button><div class="nm">'+(gid?'<div class="gav">👥</div>':'<img src="'+esc(photo)+'" alt="">')+'<span class="tt">'+esc(title)+'</span></div><button class="ib" id="dt">•••</button></div>'+
+  X.A.innerHTML='<div class="ch"><button class="ib" id="bk">➜</button><div class="nm">'+(gid?(gphoto?'<img src="'+esc(gphoto)+'" alt="">':'<div class="gav">👥</div>'):'<img src="'+esc(photo)+'" alt="">')+'<span class="tt">'+esc(title)+'</span></div><button class="ib" id="dt">•••</button></div>'+
     '<div class="chat"><div class="ms" id="ms"></div><div class="bar"><input id="mi" maxlength="500" placeholder="اكتب رسالة..."><button id="sd">➤</button></div></div>';
   $('bk').onclick=()=>X.home();
   $('dt').onclick=()=>k==='f'?profileScreen(id,back):groupInfo(id);
@@ -170,13 +217,14 @@ async function openChat(k,id){
   };
   cU.push(onSnapshot(query(collection(db,...path),orderBy('at','desc'),limit(100)),async s=>{
     const list=s.docs.map(d=>d.data()).reverse();
-    await Promise.all([...new Set(list.map(m=>m.from))].map(getU));
+    await Promise.all([...new Set(list.filter(m=>!m.sys).map(m=>m.from))].map(getU));
     const el=$('ms');if(!el)return;
     let h='',prev=0;
     list.forEach(m=>{
       const t=tm(m.at),mine=m.from===me;
       if(t-prev>600000)h+='<div class="dt">'+full(t)+'</div>';
       prev=t;
+      if(m.sys){h+='<div class="dt" style="align-self:center;max-width:90%;text-align:center">'+esc(m.text)+'</div>';return}
       h+='<div class="row'+(mine?'':' them')+'"><img class="av" data-u="'+m.from+'" src="'+esc(mine?X.prof.photo:U[m.from].photo)+'" alt=""><div class="bx">'+(gid&&!mine?'<div class="sdn">'+esc(U[m.from].name)+'</div>':'')+'<div class="bub">'+esc(m.text)+(m.inv&&!mine?'<div><button class="mini ok" data-inv="'+esc(m.inv.c)+'" data-ph="'+esc(m.inv.ph)+'" style="margin:6px 0 0">انضمام</button></div>':'')+'</div></div></div>';
     });
     el.innerHTML=h;el.scrollTop=el.scrollHeight;
@@ -191,25 +239,94 @@ async function groupInfo(gid){
   stopChat();view='ginfo';X.th(true);
   const s=await getDoc(doc(db,'groups',gid));
   if(!s.exists()){X.home();return}
-  const g=s.data();
+  const g=s.data(),me=uid(),admins=g.admins||[];
+  if(!g.members.includes(me)){X.home();return}
   await Promise.all(g.members.map(getU));
-  X.A.innerHTML=X.hdr('المجموعة')+'<div class="pad"><div class="card c"><div class="gav" style="margin:0 auto;width:80px;height:80px;font-size:36px">👥</div><h2 style="margin:10px 0 2px">'+esc(g.name)+'</h2><p>رقم المجموعة: <b style="color:var(--tx)">'+gid+'</b> · '+g.members.length+' عضو</p></div><div class="card"><p class="c">الأعضاء</p>'+g.members.map(m=>'<div class="fr" data-u="'+m+'"><img class="av" src="'+esc(U[m].photo)+'" alt=""><div class="fi"><div class="pn">'+esc(U[m].name)+(m===g.owner?' 👑':'')+'</div><div class="pi">ID: '+esc(U[m].pid)+'</div></div></div>').join('')+'</div><button class="btn ghost" id="lv">مغادرة المجموعة</button></div>';
+  const isOwner=g.owner===me,isAdm=isOwner||admins.includes(me);
+  const tag=m=>m===g.owner?' 👑 <small>المالك</small>':admins.includes(m)?' ⭐ <small>أدمن</small>':'';
+  const order=[g.owner,...admins.filter(a=>a!==g.owner),...g.members.filter(m=>m!==g.owner&&!admins.includes(m))].filter(m=>g.members.includes(m));
+  X.A.innerHTML=X.hdr('المجموعة')+'<div class="pad"><div class="card c">'+(g.photo?'<img class="av big" src="'+esc(g.photo)+'" alt="">':'<div class="gav" style="margin:0 auto;width:96px;height:96px;font-size:40px">👥</div>')+'<h2 style="margin:10px 0 2px">'+esc(g.name)+'</h2><p>رقم المجموعة: <b style="color:var(--tx)">'+gid+'</b> · '+g.members.length+' عضو</p>'+(isAdm?'<button class="btn alt" id="ged" style="font-size:15px;padding:12px">✏️ تعديل الاسم والصورة</button>':'')+'</div>'+
+    (isAdm?'<button class="btn" id="gad" style="font-size:16px;padding:14px">➕ إضافة أعضاء</button>':'')+
+    '<div class="card"><p class="c">الأعضاء</p>'+order.map(m=>'<div class="fr" data-u="'+m+'"><img class="av" src="'+esc(U[m].photo)+'" alt=""><div class="fi"><div class="pn">'+esc(U[m].name)+tag(m)+'</div><div class="pi">ID: '+esc(U[m].pid)+'</div></div></div>').join('')+'</div><button class="btn ghost" id="lv">مغادرة المجموعة</button></div>';
   $('bk').onclick=()=>openChat('g',gid);
-  document.querySelectorAll('.fr[data-u]').forEach(r=>r.onclick=()=>profileScreen(r.dataset.u,()=>groupInfo(gid)));
-  $('lv').onclick=async()=>{try{await updateDoc(doc(db,'groups',gid),{members:arrayRemove(uid())});X.home()}catch(x){toast('مشكلة: '+x.code)}};
+  const again=()=>groupInfo(gid);
+  document.querySelectorAll('.fr[data-u]').forEach(r=>r.onclick=()=>memberSheet(gid,g,r.dataset.u,again));
+  if(isAdm){$('ged').onclick=()=>editGroup(gid,g,again);$('gad').onclick=()=>addMembers(gid,g,again)}
+  $('lv').onclick=()=>sure('تبي تغادر المجموعة؟',async()=>{
+    const others=g.members.filter(m=>m!==me),text='غادر '+X.prof.name+' المجموعة';
+    const up={members:arrayRemove(me),admins:arrayRemove(me)};
+    if(g.owner===me&&others.length)up.owner=admins.find(a=>others.includes(a))||others[0];
+    try{await gmsg(gid,text,up);X.home()}catch(x){toast('مشكلة: '+x.code)}
+  });
 }
-function groupCreate(){
+function memberSheet(gid,g,u,again){
+  const me=uid(),admins=g.admins||[],isOwner=g.owner===me,isAdm=isOwner||admins.includes(me);
+  const name=U[u].name;
+  const canKick=u!==me&&u!==g.owner&&(isOwner||(isAdm&&!admins.includes(u)));
+  const canPromote=isOwner&&u!==me;
+  const s=sheet(esc(name),'<button class="btn alt" id="m1">👤 عرض الملف</button>'+
+    (canPromote?'<button class="btn alt" id="m2">'+(admins.includes(u)?'⭐ إزالة من الأدمن':'⭐ ترقية لأدمن')+'</button>':'')+
+    (canKick?'<button class="btn alt" id="m3" style="color:#e0475b">🚫 إخراج من المجموعة</button>':''));
+  const q=i=>s.o.querySelector('#'+i);
+  q('m1').onclick=()=>{s.close();profileScreen(u,again)};
+  if(canPromote)q('m2').onclick=async()=>{
+    s.close();
+    const has=admins.includes(u);
+    try{await gmsg(gid,has?'تمت إزالة '+name+' من الأدمن':name+' صار أدمن',{admins:has?arrayRemove(u):arrayUnion(u)});again()}catch(x){toast('مشكلة: '+x.code)}
+  };
+  if(canKick)q('m3').onclick=()=>{
+    s.close();
+    sure('تطرد '+name+' من المجموعة؟',async()=>{
+      try{await gmsg(gid,'تم إخراج '+name+' بواسطة '+X.prof.name,{members:arrayRemove(u),admins:arrayRemove(u)});again()}catch(x){toast('مشكلة: '+x.code)}
+    });
+  };
+}
+function editGroup(gid,g,again){
+  let photo=g.photo||'';
+  const s=sheet('تعديل المجموعة','<label class="avw" style="display:block;text-align:center"><div id="epv" class="gav" style="width:92px;height:92px;font-size:40px;margin:0 auto;background-size:cover;background-position:center">'+(photo?'':'👥')+'</div><span class="cam">📷</span><input type="file" id="epf" accept="image/*" hidden></label><input id="en" maxlength="24" value="'+esc(g.name)+'"><div class="err" id="ee"></div><button class="btn" id="es">حفظ</button>');
+  const q=i=>s.o.querySelector('#'+i);
+  if(photo)q('epv').style.backgroundImage='url("'+photo+'")';
+  q('epf').onchange=async e=>{const f=e.target.files[0];if(f){photo=await X.readImg(f);q('epv').style.backgroundImage='url("'+photo+'")';q('epv').textContent=''}};
+  q('es').onclick=async()=>{
+    const n=q('en').value.trim();
+    if(n.length<2){q('ee').textContent='الاسم قصير';return}
+    try{await updateDoc(doc(db,'groups',gid),{name:n,photo});s.close();toast('انحفظ ✅');again()}catch(x){q('ee').textContent='مشكلة: '+x.code}
+  };
+}
+async function addMembers(gid,g,again){
+  const fr=friends.filter(f=>f.status==='friends'&&!g.members.includes(f.id));
+  await Promise.all(fr.map(f=>getU(f.id)));
+  const s=sheet('إضافة أعضاء',fr.length?fr.map(f=>'<label class="fr" style="cursor:pointer"><img class="av" src="'+esc(U[f.id].photo)+'" alt=""><div class="fi"><div class="pn">'+esc(U[f.id].name)+'</div></div><input type="checkbox" data-f="'+f.id+'" style="width:22px;height:22px;margin:0;padding:0"></label>').join('')+'<button class="btn" id="as" style="margin-top:10px">إضافة</button>':'<p class="c">كل أصدقائك داخل المجموعة أو ما عندك أصدقاء بعد</p>');
+  const b=s.o.querySelector('#as');
+  if(b)b.onclick=async()=>{
+    const ids=[...s.o.querySelectorAll('input[data-f]:checked')].map(i=>i.dataset.f);
+    if(!ids.length){toast('اختر أحد');return}
+    b.disabled=true;
+    try{
+      for(const id of ids)await gmsg(gid,'تمت إضافة '+U[id].name+' بواسطة '+X.prof.name,{members:arrayUnion(id)});
+      s.close();toast('تمت الإضافة ✅');again();
+    }catch(x){b.disabled=false;toast('مشكلة: '+x.code)}
+  };
+}
+async function groupCreate(){
   stopChat();view='gc';X.th(true);
-  X.A.innerHTML=X.hdr('إنشاء مجموعة')+'<div class="pad"><div class="card c"><div class="gav" style="margin:0 auto 10px;width:80px;height:80px;font-size:36px">👥</div><input id="gn" maxlength="24" placeholder="اسم المجموعة"><div class="err" id="ge"></div><button class="btn" id="gs">إنشاء</button></div></div>';
+  const fr=friends.filter(f=>f.status==='friends');
+  await Promise.all(fr.map(f=>getU(f.id)));
+  let photo='';
+  X.A.innerHTML=X.hdr('إنشاء مجموعة')+'<div class="pad"><div class="card c"><label class="avw" style="display:block"><div id="gpv" class="gav" style="width:92px;height:92px;font-size:40px;margin:0 auto;background-size:cover;background-position:center">👥</div><span class="cam">📷</span><input type="file" id="gpf" accept="image/*" hidden></label><input id="gn" maxlength="24" placeholder="اسم المجموعة"></div>'+
+    '<div class="card"><p class="c">أضف أعضاء</p>'+(fr.length?fr.map(f=>'<label class="fr" style="cursor:pointer"><img class="av" src="'+esc(U[f.id].photo)+'" alt=""><div class="fi"><div class="pn">'+esc(U[f.id].name)+'</div></div><input type="checkbox" data-f="'+f.id+'" style="width:22px;height:22px;margin:0;padding:0"></label>').join(''):'<p class="c">ما عندك أصدقاء بعد، تقدر تضيف أعضاء لاحقًا</p>')+'</div><div class="err" id="ge"></div><button class="btn" id="gs">إنشاء المجموعة</button></div>';
   $('bk').onclick=()=>X.home();
+  $('gpf').onchange=async e=>{const f=e.target.files[0];if(f){photo=await X.readImg(f);$('gpv').style.backgroundImage='url("'+photo+'")';$('gpv').textContent=''}};
   $('gs').onclick=async()=>{
-    const n=$('gn').value.trim();
+    const n=$('gn').value.trim(),ids=[...document.querySelectorAll('input[data-f]:checked')].map(i=>i.dataset.f);
     if(n.length<2){$('ge').textContent='الاسم قصير';return}
+    $('gs').disabled=true;
     try{
       let g;do{g=String(Math.floor(10000+Math.random()*90000))}while((await getDoc(doc(db,'groups',g))).exists());
-      await setDoc(doc(db,'groups',g),{name:n,owner:uid(),members:[uid()],last:'',lastAt:serverTimestamp()});
+      await setDoc(doc(db,'groups',g),{name:n,owner:uid(),members:[uid()],admins:[],photo,last:'',lastAt:serverTimestamp()});
+      for(const id of ids)await gmsg(g,'تمت إضافة '+U[id].name+' بواسطة '+X.prof.name,{members:arrayUnion(id)});
       openChat('g',g);
-    }catch(x){$('ge').textContent='مشكلة: '+x.code}
+    }catch(x){$('gs').disabled=false;$('ge').textContent='مشكلة: '+x.code}
   };
 }
 function groupSearch(){
@@ -224,9 +341,15 @@ function groupSearch(){
       let docs=[];
       if(/^\d{5}$/.test(q)){const s=await getDoc(doc(db,'groups',q));if(s.exists())docs=[s]}
       else docs=(await getDocs(query(collection(db,'groups'),where('name','>=',q),where('name','<=',q+'\uf8ff'),limit(15)))).docs;
-      el.innerHTML=docs.length?docs.map(d=>{const g=d.data(),mem=g.members.includes(uid());return '<div class="cv"><div class="gav">👥</div><div class="t"><div class="n">'+esc(g.name)+'</div><div class="m">'+g.members.length+' عضو · رقم '+d.id+'</div></div><button class="mini'+(mem?'':' ok')+'" data-j="'+d.id+'" data-m="'+(mem?1:0)+'">'+(mem?'فتح':'انضمام')+'</button></div>'}).join(''):'<div class="empty">ما لقيت شي</div>';
+      el.innerHTML=docs.length?docs.map(d=>{const g=d.data(),mem=g.members.includes(uid());return '<div class="cv">'+gAv(g)+'<div class="t"><div class="n">'+esc(g.name)+'</div><div class="m">'+g.members.length+' عضو · رقم '+d.id+'</div></div><button class="mini'+(mem?'':' ok')+'" data-j="'+d.id+'" data-m="'+(mem?1:0)+'">'+(mem?'فتح':'انضمام')+'</button></div>'}).join(''):'<div class="empty">ما لقيت شي</div>';
       el.querySelectorAll('[data-j]').forEach(b=>b.onclick=async()=>{
-        try{if(b.dataset.m!=='1')await updateDoc(doc(db,'groups',b.dataset.j),{members:arrayUnion(uid())});openChat('g',b.dataset.j)}catch(x){toast('مشكلة: '+x.code)}
+        try{
+          if(b.dataset.m!=='1'){
+            await updateDoc(doc(db,'groups',b.dataset.j),{members:arrayUnion(uid())});
+            await gmsg(b.dataset.j,X.prof.name+' انضم للمجموعة');
+          }
+          openChat('g',b.dataset.j);
+        }catch(x){toast('مشكلة: '+x.code)}
       });
     }catch(x){el.innerHTML='<p class="err">مشكلة: '+esc(x.code)+'</p>'}
   };
@@ -252,4 +375,4 @@ export async function inviteModal(code,room,inRoom){
     b.disabled=true;
     try{await sendInvite(b.dataset.i,code);b.textContent='تمت الدعوة ✅';b.classList.remove('ok')}catch(x){b.disabled=false;toast('مشكلة: '+x.code)}
   });
-    }
+}
