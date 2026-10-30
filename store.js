@@ -38,7 +38,7 @@ function render(l){
       '<div style="font-weight:800;margin:6px 0 2px">'+c[1]+'</div>'+
       '<div style="color:#8a8aa0;font-size:12px;margin-bottom:6px">عندك: '+(have[c[0]]||0)+'</div>'+
       btn(c,'gems')+btn(c,'coins')+'</div>').join('')+'</div>'+
-    '<p style="text-align:center;font-size:12px;color:#8a8aa0">استخدم البطاقة في أول 5 ثواني من اللعبة لتضمن دورك</p>';
+    '<p style="text-align:center;font-size:12px;color:#8a8aa0">استخدم البطاقة في أول 10 ثواني من اللعبة لتضمن دورك</p>';
   l.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>buy(l,b.dataset.r,b.dataset.c));
 }
 function buy(l,r,cur){
