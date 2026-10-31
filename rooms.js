@@ -2,11 +2,11 @@ import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import * as V from "./voice.js";
 import {info} from "./roles.js";
-import * as B from "./banner.js?v=1";
-import * as Store from "./store.js?v=1";
-import * as Daily from "./daily.js?v=1";
-import * as Fx from "./fx.js?v=1";
-import * as Bd from "./badges.js?v=1";
+import * as B from "./banner.js?v=3";
+import * as Store from "./store.js?v=3";
+import * as Daily from "./daily.js?v=3";
+import * as Fx from "./fx.js?v=3";
+import * as Bd from "./badges.js?v=3";
 
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
@@ -395,11 +395,10 @@ function render(){
   X.A.classList.add('fix');
   X.A.innerHTML=(function(){
     const hp=players.find(p=>p.id===room.host)||{},nm0=room.name||('غرفة '+code);
-    const cb='width:auto;margin:0;padding:8px 14px;border-radius:20px;background:rgba(14,22,60,.72);color:#fff;border:0;font-size:14px;cursor:pointer';
-    const pill='<div style="display:flex;align-items:center;gap:10px;background:rgba(14,22,60,.75);border-radius:26px;padding:6px 16px 6px 8px;min-width:190px;max-width:250px"><img src="'+esc(hp.photo||'')+'" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;background:#445;flex:none"><div style="min-width:0;display:flex;flex-direction:column"><b style="color:#fff;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(nm0)+'</b><span style="color:#9aa6d0;font-size:12px;direction:ltr;text-align:right">ID: '+code+'</span></div></div>';
-    return bar(pill,'<button class="lv" id="l">✕</button>')+
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 14px 8px"><div style="display:flex;align-items:center;gap:6px"><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'</div>'+
-      '<div style="display:flex;align-items:center;gap:8px">'+(host?'<button id="rdt" style="'+cb+'">•••</button>':'')+'<button id="rcn" style="'+cb+'">👥 '+seated.length+'/'+mx+(specs.length?' · 👁 '+specs.length:'')+'</button></div></div>';
+    const sb='width:auto;margin:0;border:0;color:#fff;background:rgba(14,22,60,.72);border-radius:18px;cursor:pointer;font-size:13px;padding:7px 11px';
+    const pill='<div style="flex:1;min-width:0;max-width:210px;display:flex;align-items:center;gap:8px;background:rgba(14,22,60,.75);border-radius:26px;padding:5px 14px 5px 6px"><img src="'+esc(hp.photo||'')+'" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;background:#445;flex:none"><div style="min-width:0;display:flex;flex-direction:column"><b style="color:#fff;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(nm0)+'</b><span style="color:#9aa6d0;font-size:11px;direction:ltr;text-align:right">ID: '+code+'</span></div></div>';
+    const grp='<div style="display:flex;direction:ltr;align-items:center;gap:6px;flex:none"><button class="lv" id="l" style="padding:7px 12px">✕</button>'+(host?'<button id="rdt" style="'+sb+';font-size:18px;padding:5px 10px;line-height:1" title="إعدادات الغرفة">⋮</button>':'')+'<span class="tag '+mode+'" style="white-space:nowrap">'+tagName(mode)+(room.pwh?' 🔒':'')+(room.sorc?' 🧙':'')+'</span><button id="rcn" style="'+sb+'">👥 '+seated.length+'/'+mx+(specs.length?' 👁'+specs.length:'')+'</button></div>';
+    return '<div class="top" style="gap:8px;padding:12px">'+pill+grp+'</div>';
   })()+
   rolesRow()+'<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
   '<div class="mid"><p class="c" style="font-size:12px">اضغط + لتغيير مكانك</p>'+
