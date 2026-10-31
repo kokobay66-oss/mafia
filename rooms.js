@@ -316,7 +316,7 @@ async function full(u){
     '<button id="fx" style="'+IB+'right:12px">➜</button>'+(mine?'<button id="fe" style="'+IB+'left:12px">✏️</button>':'')+
     '<div style="position:relative;z-index:2;padding:0 20px;margin-top:-46px;display:flex;align-items:flex-end;gap:14px"><img src="'+esc(pr.photo)+'" alt="" style="width:96px;height:96px;border-radius:50%;border:4px solid #fff;object-fit:cover;background:#ddd"><div style="font-weight:800;font-size:22px;padding-bottom:8px">'+esc(pr.name)+(room&&room.host===u?' 👑':'')+'</div></div>'+
     '<div style="display:flex;margin:18px 20px;text-align:center;background:#f4f3fa;border-radius:16px;padding:14px">'+stat(g,'إجمالي الألعاب')+'<div style="width:1px;background:#ddd"></div>'+stat(wr,'معدل الفوز')+'</div>'+
-    '<div>'+row('ID',esc(pr.pid||'-'))+row('الجنس',genName(pr.gender))+row('المنطقة',regionName(pr.region))+row('الشارات',bs)+'</div><div id="ff" style="padding:20px"></div>';
+    '<div>'+row('ID',esc(pr.pid||'-'))+row('الجنس',genName(pr.gender))+row('المنطقة',regionName(pr.region))+(bl.length?row('الشارات',bs):'')+'</div><div id="ff" style="padding:20px"></div>';
   document.body.appendChild(o);
   const q=i=>o.querySelector('#'+i);
   q('fx').onclick=()=>o.remove();
