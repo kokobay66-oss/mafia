@@ -1,6 +1,6 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import * as V from "./voice.js";
+import * as V from "./voice.js?v=5";
 import {info} from "./roles.js";
 import * as B from "./banner.js?v=3";
 import * as Store from "./store.js?v=3";
@@ -183,6 +183,7 @@ function enter(c){
     rchat=s.docs.map(d=>d.data()).reverse();renderChat();
   }));
   Snd.startRoom();
+  V.join(c,X.me.uid);
 }
 function seatHTML(i){
   const p=players.find(x=>x.id!==undefined&&x.seat===i);
