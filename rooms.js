@@ -5,6 +5,8 @@ import {info} from "./roles.js";
 import * as B from "./banner.js?v=1";
 import * as Store from "./store.js?v=1";
 import * as Daily from "./daily.js?v=1";
+import * as Fx from "./fx.js?v=1";
+import * as Bd from "./badges.js?v=1";
 
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
@@ -20,7 +22,7 @@ const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new 
 const isBan=r=>{const b=r.bans&&r.bans[X.me.uid];return !!b&&b>Date.now()};
 const DUR=[['30 ثانية',30e3],['5 دقايق',3e5],['30 دقيقة',18e5],['ساعة',36e5],['24 ساعة',864e5],['نهائيًا',0]];
 const bar=(a,b)=>'<div class="top"><div style="display:flex;gap:8px;align-items:center">'+a+'</div><div style="display:flex;gap:8px;align-items:center">'+b+'</div></div>';
-export function init(c){X=c;Store.init(c);Daily.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
+export function init(c){X=c;Store.init(c);Daily.init(c);Fx.init(c);Bd.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
 export function stopRoom(){if(rsh){rsh.close();rsh=null}un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
 
 /* صفوف الأدوار (تنعاد في الإنشاء وفي إعدادات الغرفة) */
@@ -293,8 +295,8 @@ const FADE='-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:
 const GRAD='linear-gradient(135deg,#c7d2fe,#a5b4fc)';
 const paintB=(el,img)=>{if(el&&B.ok(img))el.style.backgroundImage='url("'+img+'")'};
 const statsOf=async u=>{
-  try{const s=await getDoc(doc(db,'stats',u));const d=s.exists()?s.data():{},g=d.games||0,w=d.wins||0;return [g,(g?(w/g*100).toFixed(1):'0')+'%']}
-  catch(e){return ['-','-']}
+  try{const s=await getDoc(doc(db,'stats',u));const d=s.exists()?s.data():{},g=d.games||0,w=d.wins||0;return [g,(g?(w/g*100).toFixed(1):'0')+'%',d]}
+  catch(e){return ['-','-',{}]}
 };
 const IB='position:absolute;top:10px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font-size:17px;cursor:pointer;padding:0;margin:0;z-index:5;';
 
@@ -304,7 +306,8 @@ async function full(u){
   const pl=players.find(x=>x.id===u)||{};
   let pr={name:pl.name||'لاعب',photo:pl.photo||'',pid:'',gender:'',region:''};
   try{const s=await getDoc(doc(db,'profiles',u));if(s.exists())pr={...pr,...s.data()}}catch(e){}
-  const [g,wr]=await statsOf(u);
+  const [g,wr,sd]=await statsOf(u);
+  const bl=Bd.earned(sd),bs=bl.length?'<span style="display:inline-flex;gap:4px">'+bl.map(b=>Bd.chip(b,26)).join('')+'</span>':'لا يوجد';
   const o=document.createElement('div');
   o.style.cssText='position:fixed;inset:0;background:#fff;color:#222;color-scheme:light;z-index:9998;overflow-y:auto;direction:rtl';
   const row=(k,v)=>'<div style="display:flex;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f0f0f4"><span>'+k+'</span><span style="color:#8a8aa0">'+v+'</span></div>';
@@ -313,7 +316,7 @@ async function full(u){
     '<button id="fx" style="'+IB+'right:12px">➜</button>'+(mine?'<button id="fe" style="'+IB+'left:12px">✏️</button>':'')+
     '<div style="position:relative;z-index:2;padding:0 20px;margin-top:-46px;display:flex;align-items:flex-end;gap:14px"><img src="'+esc(pr.photo)+'" alt="" style="width:96px;height:96px;border-radius:50%;border:4px solid #fff;object-fit:cover;background:#ddd"><div style="font-weight:800;font-size:22px;padding-bottom:8px">'+esc(pr.name)+(room&&room.host===u?' 👑':'')+'</div></div>'+
     '<div style="display:flex;margin:18px 20px;text-align:center;background:#f4f3fa;border-radius:16px;padding:14px">'+stat(g,'إجمالي الألعاب')+'<div style="width:1px;background:#ddd"></div>'+stat(wr,'معدل الفوز')+'</div>'+
-    '<div>'+row('ID',esc(pr.pid||'-'))+row('الجنس',genName(pr.gender))+row('المنطقة',regionName(pr.region))+'</div><div id="ff" style="padding:20px"></div>';
+    '<div>'+row('ID',esc(pr.pid||'-'))+row('الجنس',genName(pr.gender))+row('المنطقة',regionName(pr.region))+row('الشارات',bs)+'</div><div id="ff" style="padding:20px"></div>';
   document.body.appendChild(o);
   const q=i=>o.querySelector('#'+i);
   q('fx').onclick=()=>o.remove();
@@ -356,13 +359,17 @@ async function profile(u){
     '<div style="height:150px;position:relative"><div id="pb" style="position:absolute;inset:0;background:'+GRAD+' center top/cover;'+FADE+'"></div></div>'+
     (mine?'<button id="pe" style="'+IB+'right:10px">✏️</button>':'<button id="prp" style="'+IB+'right:10px">⚠️</button>')+
     (host&&!mine?'<button id="pk" style="'+IB+'right:54px">🚫</button>':'')+
-    '<div style="position:relative;z-index:2;padding:0 18px 18px"><div style="display:flex;align-items:flex-end;gap:12px;margin-top:-34px"><img src="'+esc(p.photo)+'" alt="" style="width:72px;height:72px;border-radius:50%;border:3px solid #fff;object-fit:cover;background:#ddd"><div style="font-weight:700;font-size:18px;padding-bottom:6px">'+esc(p.name)+(room.host===u?' 👑':'')+'</div></div>'+
+    '<div style="position:relative;z-index:2;padding:0 18px 18px"><div id="pbd" style="display:none;position:absolute;left:14px;top:6px;gap:4px;background:#f4f3fa;border-radius:16px;padding:4px 6px"></div><div style="display:flex;align-items:flex-end;gap:12px;margin-top:-34px"><img src="'+esc(p.photo)+'" alt="" style="width:72px;height:72px;border-radius:50%;border:3px solid #fff;object-fit:cover;background:#ddd"><div style="font-weight:700;font-size:18px;padding-bottom:6px">'+esc(p.name)+(room.host===u?' 👑':'')+'</div></div>'+
     '<div style="display:flex;margin-top:16px;text-align:center"><div style="flex:1"><div style="font-size:24px;font-weight:700" id="pg">…</div><div style="color:#888;font-size:13px">إجمالي الألعاب</div></div><div style="width:1px;background:#ddd"></div><div style="flex:1"><div style="font-size:24px;font-weight:700" id="pw2">…</div><div style="color:#888;font-size:13px">معدل الفوز</div></div></div></div></div>';
   document.body.appendChild(o);
   o.onclick=e=>{if(e.target===o)o.remove()};
   const q=i=>o.querySelector('#'+i);
   q('pc').onclick=e=>{if(e.target.closest('button'))return;o.remove();full(u)};
-  statsOf(u).then(([g,w])=>{if(q('pg')){q('pg').textContent=g;q('pw2').textContent=w}});
+  statsOf(u).then(([g,w,d])=>{
+    if(q('pg')){q('pg').textContent=g;q('pw2').textContent=w}
+    const bl=Bd.earned(d),bx=q('pbd');
+    if(bx&&bl.length){bx.innerHTML=bl.slice(0,5).map(b=>Bd.chip(b,24)).join('');bx.style.display='flex'}
+  });
   B.get(u).then(i=>{if(i)paintB(q('pb'),i)});
   if(mine)q('pe').onclick=()=>B.pick(X.me.uid,(img,err)=>{if(img){paintB(q('pb'),img);toast('تم تحديث البانر ✅')}else toast('مشكلة: '+((err&&(err.code||err.message))||''))});
   else{
