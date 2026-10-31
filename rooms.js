@@ -5,7 +5,8 @@ import {info} from "./roles.js";
 import * as B from "./banner.js?v=3";
 import * as Store from "./store.js?v=3";
 import * as Daily from "./daily.js?v=3";
-import * as Fx from "./fx.js?v=3";
+import * as Fx from "./fx.js?v=4";
+import * as Snd from "./sound.js?v=4";
 import * as Bd from "./badges.js?v=3";
 
 const db=getFirestore(getApp());
@@ -22,8 +23,8 @@ const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new 
 const isBan=r=>{const b=r.bans&&r.bans[X.me.uid];return !!b&&b>Date.now()};
 const DUR=[['30 ثانية',30e3],['5 دقايق',3e5],['30 دقيقة',18e5],['ساعة',36e5],['24 ساعة',864e5],['نهائيًا',0]];
 const bar=(a,b)=>'<div class="top"><div style="display:flex;gap:8px;align-items:center">'+a+'</div><div style="display:flex;gap:8px;align-items:center">'+b+'</div></div>';
-export function init(c){X=c;Store.init(c);Daily.init(c);Fx.init(c);Bd.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
-export function stopRoom(){if(rsh){rsh.close();rsh=null}un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
+export function init(c){X=c;Store.init(c);Daily.init(c);Fx.init(c);Snd.init();Bd.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
+export function stopRoom(){Snd.stopRoom();if(rsh){rsh.close();rsh=null}un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
 
 /* صفوف الأدوار (تنعاد في الإنشاء وفي إعدادات الغرفة) */
 const RR=[['doc','doctor','الطبيب','card-doctor.jpg'],['det','detective','المحقق','card-detective.jpg'],['sorc','sorcerer','الساحر','🧙'],['snp','sniper','القناص','🎯']];
@@ -181,6 +182,7 @@ function enter(c){
   un.push(onSnapshot(query(collection(db,'rooms',c,'chat'),orderBy('at','desc'),limit(50)),s=>{
     rchat=s.docs.map(d=>d.data()).reverse();renderChat();
   }));
+  Snd.startRoom();
 }
 function seatHTML(i){
   const p=players.find(x=>x.id!==undefined&&x.seat===i);
