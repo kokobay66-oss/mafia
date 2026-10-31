@@ -15,8 +15,10 @@ const audio=()=>{
   try{if(!ac){const C=window.AudioContext||window.webkitAudioContext;if(C)ac=new C()}if(ac&&ac.state==='suspended')ac.resume()}catch(e){}
   return ac;
 };
+const sv=()=>{try{const x=localStorage.getItem('mj_sfx');return x===null?1:Math.max(0,Math.min(1,(+x||0)/100))}catch(e){return 1}};
 function ding(f,when,v){
   const a=audio();if(!a)return;
+  v=(v||.07)*sv();if(v<=0)return;
   try{
     const t=a.currentTime+when,o=a.createOscillator(),g=a.createGain();
     o.type='triangle';o.frequency.setValueAtTime(f,t);
