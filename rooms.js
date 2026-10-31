@@ -4,6 +4,7 @@ import * as V from "./voice.js";
 import {info} from "./roles.js";
 import * as B from "./banner.js?v=1";
 import * as Store from "./store.js?v=1";
+import * as Daily from "./daily.js?v=1";
 
 const db=getFirestore(getApp());
 let X,code=null,room=null,players=[],rchat=[],un=[],Game=null;
@@ -19,7 +20,7 @@ const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new 
 const isBan=r=>{const b=r.bans&&r.bans[X.me.uid];return !!b&&b>Date.now()};
 const DUR=[['30 ثانية',30e3],['5 دقايق',3e5],['30 دقيقة',18e5],['ساعة',36e5],['24 ساعة',864e5],['نهائيًا',0]];
 const bar=(a,b)=>'<div class="top"><div style="display:flex;gap:8px;align-items:center">'+a+'</div><div style="display:flex;gap:8px;align-items:center">'+b+'</div></div>';
-export function init(c){X=c;Store.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
+export function init(c){X=c;Store.init(c);Daily.init(c);GM.then(g=>{Game=g;if(g)g.init(c)})}
 export function stopRoom(){if(rsh){rsh.close();rsh=null}un.forEach(f=>f());un=[];if(Game)Game.stop();V.release();code=null;room=null;players=[];rchat=[]}
 
 /* صفوف الأدوار (تنعاد في الإنشاء وفي إعدادات الغرفة) */
@@ -385,10 +386,12 @@ function render(){
   const old=$('ri'),keep=old?old.value:'',foc=!!old&&document.activeElement===old;
   const R=n=>[...Array(n)].map((_,i)=>i),can=(mode==='classic'||MAD_OPEN)&&seated.length>=MINSTART&&room.status!=='playing';
   X.A.classList.add('fix');
-  X.A.innerHTML=bar('','<button class="lv" id="l">✕</button>')+(function(){
-    const nm0=room.name||('غرفة '+code),pill='display:flex;flex-direction:column;align-items:flex-start;background:rgba(14,22,60,.72);border-radius:22px;padding:8px 16px;min-width:0',cb='width:auto;margin:0;padding:8px 14px;border-radius:20px;background:rgba(14,22,60,.72);color:#fff;border:0;font-size:14px;cursor:pointer';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 14px 8px"><div style="'+pill+'"><b style="color:#fff;font-size:15px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(nm0)+'</b><span style="color:#9aa6d0;font-size:12px;direction:ltr">ID: '+code+'</span></div>'+
-      '<div style="display:flex;align-items:center;gap:6px"><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'</div>'+
+  X.A.innerHTML=(function(){
+    const hp=players.find(p=>p.id===room.host)||{},nm0=room.name||('غرفة '+code);
+    const cb='width:auto;margin:0;padding:8px 14px;border-radius:20px;background:rgba(14,22,60,.72);color:#fff;border:0;font-size:14px;cursor:pointer';
+    const pill='<div style="display:flex;align-items:center;gap:10px;background:rgba(14,22,60,.75);border-radius:26px;padding:6px 16px 6px 8px;min-width:190px;max-width:250px"><img src="'+esc(hp.photo||'')+'" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;background:#445;flex:none"><div style="min-width:0;display:flex;flex-direction:column"><b style="color:#fff;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(nm0)+'</b><span style="color:#9aa6d0;font-size:12px;direction:ltr;text-align:right">ID: '+code+'</span></div></div>';
+    return bar(pill,'<button class="lv" id="l">✕</button>')+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 14px 8px"><div style="display:flex;align-items:center;gap:6px"><span class="tag '+mode+'">'+tagName(mode)+'</span>'+(room.pwh?'<span>🔒</span>':'')+(room.sorc?'<span>🧙</span>':'')+'</div>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(host?'<button id="rdt" style="'+cb+'">•••</button>':'')+'<button id="rcn" style="'+cb+'">👥 '+seated.length+'/'+mx+(specs.length?' · 👁 '+specs.length:'')+'</button></div></div>';
   })()+
   rolesRow()+'<div class="scr"><div class="seats" style="min-height:'+(half*68)+'px">'+col(R(half))+
