@@ -1,6 +1,7 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,arrayUnion,arrayRemove,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import * as B from "./banner.js?v=1";
+import * as Bd from "./badges.js?v=1";
 
 const db=getFirestore(getApp());
 let X,friends=[],chats=[],grps=[],fU=[],cU=[],U={},view='',curRead=null;
@@ -47,8 +48,8 @@ const genName=g=>g==='m'?'ذكر':g==='f'?'أنثى':'غير محدد';
 const GRAD='linear-gradient(135deg,#c7d2fe,#a5b4fc)';
 const FADE='-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent);';
 const statsOf=async u=>{
-  try{const s=await getDoc(doc(db,'stats',u));const d=s.exists()?s.data():{},g=d.games||0,w=d.wins||0;return [g,(g?(w/g*100).toFixed(1):'0')+'%']}
-  catch(e){return ['-','-']}
+  try{const s=await getDoc(doc(db,'stats',u));const d=s.exists()?s.data():{},g=d.games||0,w=d.wins||0;return [g,(g?(w/g*100).toFixed(1):'0')+'%',d]}
+  catch(e){return ['-','-',{}]}
 };
 function sheet(title,html){
   const o=document.createElement('div');o.className='ov';
@@ -167,7 +168,7 @@ async function profileScreen(u,back){
   X.A.innerHTML='<div style="position:relative;height:230px"><div id="pbn" style="position:absolute;inset:0;background:'+GRAD+' center top/cover;'+FADE+'"></div><button class="ib" id="bk" style="position:absolute;top:14px;right:14px;z-index:5;background:rgba(0,0,0,.5);color:#fff;border:0">➜</button></div>'+
     '<div style="position:relative;z-index:2;padding:0 20px;margin-top:-46px;display:flex;align-items:flex-end;gap:14px"><img class="av big" src="'+esc(p.photo)+'" alt="" style="border:4px solid #fff;width:96px;height:96px"><div style="font-weight:800;font-size:22px;padding-bottom:8px">'+esc(p.name)+'</div></div>'+
     '<div style="display:flex;margin:18px 20px;text-align:center;background:#f4f3fa;border-radius:16px;padding:14px">'+stat(st[0],'إجمالي الألعاب')+'<div style="width:1px;background:#ddd"></div>'+stat(st[1],'معدل الفوز')+'</div>'+
-    '<div>'+row('ID',esc(p.pid||'-'))+row('الجنس',genName(p.gender))+row('المنطقة',regionName(p.region))+'</div>'+
+    '<div>'+row('ID',esc(p.pid||'-'))+row('الجنس',genName(p.gender))+row('المنطقة',regionName(p.region))+row('الشارات',(function(){const l=Bd.earned(st[2]);return l.length?'<span style="display:inline-flex;gap:4px">'+l.map(b=>Bd.chip(b,26)).join('')+'</span>':'لا يوجد'})())+'</div>'+
     '<div class="pad" style="padding-top:16px">'+act+'<div class="err" id="pe"></div></div>';
   if(bn&&B.ok(bn))$('pbn').style.backgroundImage='url("'+bn+'")';
   $('bk').onclick=back;
