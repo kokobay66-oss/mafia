@@ -1,10 +1,11 @@
 /* الصوت: موسيقى الغرفة + خانة الصوت في الإعدادات (المؤثرات تنربط بالأزرار لاحقًا) */
-const KM='mj_music',KS='mj_sfx';
+const KM='mj_music',KS='mj_sfx',KV='mj_voice';
 const rd=(k,d)=>{try{const v=localStorage.getItem(k);if(v===null)return d;const n=+v;return isNaN(n)?d:Math.max(0,Math.min(100,n))}catch(e){return d}};
 const wr=(k,v)=>{try{localStorage.setItem(k,String(v))}catch(e){}};
 /* الافتراضي 30% لين اللاعب يغيّرها بنفسه */
 export const music=()=>rd(KM,30);
 export const sfx=()=>rd(KS,100);
+export const voice=()=>rd(KV,100);
 let a=null,inRoom=false,prev=false,lastM=30,lastF=100;
 function el(){if(!a){a=new Audio('music.mp3');a.loop=true;a.preload='auto'}return a}
 function apply(){
@@ -23,7 +24,7 @@ const sl=(id,t,v)=>'<div style="margin:16px 0"><div style="display:flex;justify-
 function sheet(){
   prev=false;
   const o=document.createElement('div');o.className='ov';
-  o.innerHTML='<div class="sh"><div class="shh"><b>🔊 الصوت</b><button class="mini" id="sx">✕</button></div>'+sl('sm','🎵 الموسيقى',music())+sl('sf','🔔 المؤثرات الصوتية',sfx())+'<p class="c" style="font-size:12px;margin:4px 0 0">الموسيقى تشتغل تلقائي بـ 30% لما تدخل الغرفة، وإذا غيّرتها هنا تنحفظ على اختيارك</p></div>';
+  o.innerHTML='<div class="sh"><div class="shh"><b>🔊 الصوت</b><button class="mini" id="sx">✕</button></div>'+sl('sm','🎵 الموسيقى',music())+sl('sf','🔔 المؤثرات الصوتية',sfx())+sl('sv','🎙️ أصوات اللاعبين',voice())+'<p class="c" style="font-size:12px;margin:4px 0 0">الموسيقى تشتغل تلقائي بـ 30% لما تدخل الغرفة، وإذا غيّرتها هنا تنحفظ على اختيارك. أصوات اللاعبين 100% لين تغيّرها</p></div>';
   document.body.appendChild(o);
   const q=i=>o.querySelector('#'+i);
   const close=()=>{prev=false;o.remove();apply()};
@@ -40,6 +41,7 @@ function sheet(){
   };
   bind('sm',KM,music,()=>{prev=true;apply()});
   bind('sf',KS,sfx,()=>{});
+  bind('sv',KV,voice,()=>{window.dispatchEvent(new Event('mj-voice'))});
 }
 /* يضيف زر "الصوت" في صفحة الإعدادات */
 function run(){
