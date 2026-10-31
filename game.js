@@ -59,7 +59,7 @@ function cardSheet(){
   const have=X.prof.cards||{},pool=room.pool||[],can=room.ph==='pre'&&!(myClaim&&myClaim.g===room.g);
   const list=Object.keys(have).filter(r=>have[r]>0&&R[r]&&r!=='citizen');
   const o=document.createElement('div');o.className='ov';
-  o.innerHTML='<div class="sh"><div class="shh"><b>🃏 بطاقاتك</b><button class="mini" id="cx">✕</button></div><p class="c" style="font-size:12px">البطاقة تُستخدم في أول 10 ثواني من اللعبة وتضمن لك الدور</p>'+
+  o.innerHTML='<div class="sh"><div class="shh"><b>🃏 بطاقاتك</b><button class="mini" id="cx">✕</button></div><p class="c" style="font-size:12px">البطاقة تُستخدم في أول 10 ثواني من اللعبة وتضمن لك الدور</p>'+(room.ph!=='pre'?'<p class="c" style="font-size:12px;color:#e0475b">انتهى وقت استخدام البطاقات في هذي اللعبة</p>':'')+
     (list.length?list.map(r=>'<div class="fr"><div class="fi">'+R[r][1]+' '+R[r][0]+' × '+have[r]+(pool.includes(r)?'':' <small>(مو موجود في هذي الغرفة)</small>')+'</div><button class="mini ok" data-r="'+r+'"'+(can&&pool.includes(r)?'':' disabled')+'>استخدام</button></div>').join(''):'<p class="c">ما عندك بطاقات. اشتر من المتجر 🛒</p>')+'</div>';
   document.body.appendChild(o);
   o.onclick=e=>{if(e.target===o||e.target.id==='cx')o.remove()};
@@ -70,7 +70,7 @@ function cardSheet(){
 function gcss(){
   if($('gcss'))return;
   const s=document.createElement('style');s.id='gcss';
-  s.textContent='.gs .col{width:76px}.gs .seat{width:60px;height:60px;border:3px solid #35e0b0;box-shadow:0 0 12px #35e0b099}.gs .seat.me{border-color:#ffd24c;box-shadow:0 0 12px #ffd24c99}.gs .seat.dead{border-color:#777;box-shadow:none}.gs .seat.sel{border-color:#e0475b}'+
+  s.textContent='.mini:disabled{opacity:.4;pointer-events:none}.gs .col{width:76px}.gs .seat{width:60px;height:60px;border:3px solid #35e0b0;box-shadow:0 0 12px #35e0b099}.gs .seat.me{border-color:#ffd24c;box-shadow:0 0 12px #ffd24c99}.gs .seat.dead{border-color:#777;box-shadow:none}.gs .seat.sel{border-color:#e0475b}'+
   '.gs .seat.sel::before{content:"✓";position:absolute;inset:0;border-radius:50%;background:rgba(224,71,91,.6);color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;z-index:3}'+
   '.gs .pl{display:flex;align-items:center;gap:3px;margin-top:6px;width:76px;background:rgba(0,0,0,.5);border-radius:12px;padding:1px 5px}'+
   '.gs .pl .nv{flex:1;min-width:0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}'+
