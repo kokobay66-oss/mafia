@@ -1,11 +1,11 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import * as V from "./voice.js?v=5";
+import * as V from "./voice.js?v=6";
 import {info} from "./roles.js";
 import * as B from "./banner.js?v=3";
 import * as Store from "./store.js?v=3";
-import * as Daily from "./daily.js?v=3";
-import * as Fx from "./fx.js?v=4";
+import * as Daily from "./daily.js?v=6";
+import * as Fx from "./fx.js?v=6";
 import * as Snd from "./sound.js?v=4";
 import * as Bd from "./badges.js?v=3";
 
