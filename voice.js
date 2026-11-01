@@ -1,6 +1,13 @@
 /* الصوت المباشر (المايكات) عبر Agora: قناة لكل غرفة، والمايك والسماعة */
 const APP='698790109ce54564bc4dbc51d038666c';
-const SDK='https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.20/AgoraRTC_N.js';
+/* مصادر المكتبة: لو واحد فشل يجرب اللي بعده */
+const URLS=[
+  'https://download.agora.io/sdk/release/AgoraRTC_N-4.20.2.js',
+  'https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.20.2/AgoraRTC_N-production.js',
+  'https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.20.2/AgoraRTC_N.js',
+  'https://unpkg.com/agora-rtc-sdk-ng@4.20.2/AgoraRTC_N-production.js',
+  'https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js'
+];
 let RTC=null,cl=null,code=null,me=null,mic=null,userMic=false,forced=null,tt=()=>{},muted=false,connected=false,timer=null,gen=0;
 let status='idle',lastErr='',lastJoin=null;
 /* صوت اللاعبين: 100 افتراضي، ويتغير بس من الإعدادات وينحفظ */
@@ -12,14 +19,20 @@ function note(msg,ms){
   const t=document.createElement('div');t.className='toast';t.textContent=msg;
   document.body.appendChild(t);setTimeout(()=>t.remove(),ms||3000);
 }
-function load(){
-  if(window.AgoraRTC)return Promise.resolve(window.AgoraRTC);
+function loadOne(u){
   return new Promise((res,rej)=>{
-    const s=document.createElement('script');s.src=SDK;
-    s.onload=()=>window.AgoraRTC?res(window.AgoraRTC):rej(new Error('sdk'));
-    s.onerror=()=>rej(new Error('تعذر تحميل مكتبة الصوت (جرّب تحدّث الصفحة)'));
+    const s=document.createElement('script');s.src=u;s.async=true;
+    s.onload=()=>window.AgoraRTC?res():(s.remove(),rej(new Error('no global')));
+    s.onerror=()=>{s.remove();rej(new Error('fail '+u))};
     document.head.appendChild(s);
   });
+}
+async function load(){
+  if(window.AgoraRTC)return window.AgoraRTC;
+  for(const u of URLS){
+    try{await loadOne(u);return window.AgoraRTC}catch(e){console.warn('agora sdk',u,e)}
+  }
+  throw new Error('تعذر تحميل مكتبة الصوت من كل المصادر، تأكد إن النت يفتح download.agora.io');
 }
 function applyVolume(){
   if(!cl)return;
