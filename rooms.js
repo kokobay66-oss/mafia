@@ -1,6 +1,6 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,deleteDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,where,limit,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import * as V from "./voice.js?v=6";
+import * as V from "./voice.js?v=7";
 import {info} from "./roles.js";
 import * as B from "./banner.js?v=3";
 import * as Store from "./store.js?v=3";
