@@ -65,12 +65,23 @@ function missions(){
   };
   document.body.appendChild(o);paint();
 }
+/* أيقونات الدوائر بدل الإيموجي: الرتبة، التعليمات، المهام، يلعب الأصدقاء */
+const ICONS={q1:'ic-rank.png',q4:'ic-help.png',q2:'ic-task.png',q3:'ic-friends.png'};
+function icons(){
+  Object.keys(ICONS).forEach(id=>{
+    const i=document.querySelector('#'+id+' i');
+    if(!i||i.dataset.ic)return;
+    i.dataset.ic='1';
+    i.style.cssText='background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;width:62px;height:62px';
+    i.innerHTML='<img src="'+ICONS[id]+'" alt="" style="width:62px;height:62px;display:block;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,.45)">';
+  });
+}
 /* يربط زر المهام في الرئيسية ويفتح القائمة مرة عند الدخول */
 function run(){
   if(!X||!X.prof)return;
   const q=document.getElementById('q2');
   if(!q||q.dataset.dl)return;
-  q.dataset.dl='1';q.onclick=missions;
+  q.dataset.dl='1';q.onclick=missions;icons();
   if(!shown){shown=true;setTimeout(()=>{if(state().can)popup()},700)}
 }
 export function init(c){
