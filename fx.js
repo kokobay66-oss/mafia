@@ -30,12 +30,9 @@ function target(type){
   const chip=document.querySelector('.coin[data-w="'+(type==='gem'?'gem':'coin')+'"]');
   if(chip){
     const r=chip.getBoundingClientRect();
-    if(r.width>0){
-      const x=r.left+r.width/2,y=r.top+r.height/2,el=document.elementFromPoint(x,y);
-      if(el&&chip.contains(el))return {x,y,chip};
-    }
+    if(r.width>0&&r.height>0)return {x:r.left+r.width/2,y:r.top+r.height/2,chip};
   }
-  return {x:window.innerWidth-70,y:70,chip:null};
+  return {x:window.innerWidth-70,y:34,chip:null};
 }
 function play(type,amount,from,to){
   return new Promise(res=>{
