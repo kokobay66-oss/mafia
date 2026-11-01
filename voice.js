@@ -13,7 +13,13 @@ let status='idle',lastErr='',lastJoin=null;
 /* صوت اللاعبين: 100 افتراضي، ويتغير بس من الإعدادات وينحفظ */
 const vol=()=>{try{const v=localStorage.getItem('mj_voice');return v===null?100:Math.max(0,Math.min(100,+v||0))}catch(e){return 100}};
 const eff=()=>forced==='on'?true:forced==='off'?false:userMic;
-const errText=e=>String((e&&(e.code||e.message))||e||'غير معروف');
+const errText=e=>{
+  const c=String((e&&e.code)||''),m=String((e&&e.message)||e||'');
+  if(c==='CAN_NOT_GET_GATEWAY_SERVER'||/dynamic use static key|authorized failed|invalid token/i.test(m))
+    return 'مشروع Agora يطلب توكن (App Certificate مفعّل). أنشئ مشروع جديد بوضع Testing (App ID فقط) وغيّر الـ App ID';
+  if(/invalid vendor key|INVALID_VENDOR_KEY/i.test(c+m))return 'الـ App ID غلط';
+  return c||m||'غير معروف';
+};
 /* رسالة تبقى فترة أطول من التوست العادي */
 function note(msg,ms){
   const t=document.createElement('div');t.className='toast';t.textContent=msg;
@@ -129,7 +135,7 @@ export async function join(room,uid){
   }catch(e){
     console.error('join',e);
     status='err';lastErr='مشكلة بالصوت: '+errText(e);updateUI();
-    note(lastErr,7000);
+    note(lastErr,9000);
   }
 }
 export function html(){
