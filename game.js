@@ -1,6 +1,6 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,doc,setDoc,addDoc,updateDoc,collection,getDocs,onSnapshot,query,orderBy,limit,increment,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import * as V from "./voice.js?v=5";
+import * as V from "./voice.js?v=6";
 
 const db=getFirestore(getApp());
 const R={mafia:['مافيا','🔪'],doctor:['الطبيب','💉'],detective:['المحقق','🕵️'],sorcerer:['الساحر','🧙'],sniper:['القناص','🎯'],joker:['الجوكر','🃏'],citizen:['مواطن','🙂']};
