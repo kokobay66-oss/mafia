@@ -2,7 +2,7 @@
 import {getApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 /* رابط سيرفر التوكن (Cloudflare Worker) */
-const TOKEN_URL='';
+const TOKEN_URL='https://mafia-voice.kokobay33.workers.dev/';
 /* مصادر المكتبة: لو واحد فشل يجرب اللي بعده */
 const URLS=[
   'https://download.agora.io/sdk/release/AgoraRTC_N-4.20.2.js',
